@@ -3,3 +3,7 @@ source ./devops/common
 echo "Logging in to Github ${DOCKER_URL}"
 docker login ${DOCKER_URL} -u qmbot -p ${GITHUB_TOKEN}
 echo "-----------------------------------------"
+
+echo "Logging in to Dockerhub"
+docker login -u lsbardel -p ${DOCKER_HUB_TOKEN}
+echo "-----------------------------------------"

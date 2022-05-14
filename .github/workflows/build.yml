@@ -14,8 +14,6 @@ jobs:
         uses: actions/checkout@v2
       - name: login to docker repos
         run: make docker-login
-      - name: login to docker hub
-        run: docker login -u lsbardel -p ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: build image
         run: make image
       - name: lint

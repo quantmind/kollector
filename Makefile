@@ -1,3 +1,7 @@
+# import local .env with local env variables
+$(shell touch .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 
 .PHONY: help build
 
@@ -14,9 +18,8 @@ build:			## build and test
 cloc:			## Count lines of code - requires cloc
 	cloc --exclude-dir=target .
 
-docker-login:
+docker-login:		## login to docker repos - this is for admins only
 	@./devops/docker-login
-	@docker login -u lsbardel -p $(DOCKER_HUB_TOKEN)
 
 image:			## build docker image
 	docker build . -t kollector
