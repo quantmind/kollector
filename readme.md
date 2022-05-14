@@ -7,4 +7,4 @@ A small service for collecting and streaming orderbook L2 data from crypto excha
 ## Usage
 
 * you need rust toolchain installed (this has been developed with rust 1.6)
-* run `make build`
+* run `make build` to build and test the application

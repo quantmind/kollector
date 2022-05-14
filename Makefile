@@ -18,14 +18,21 @@ build:			## build and test
 cloc:			## Count lines of code - requires cloc
 	cloc --exclude-dir=target .
 
+doc:			## build documentation
+	@cargo doc --workspace --no-deps
+
 docker-login:		## login to docker repos - this is for admins only
 	@./devops/docker-login
 
 image:			## build docker image
 	docker build . -t kollector
 
+image-push:		## push image to repo
+	@echo skip
+
 lint:			## format code
 	@cargo fmt
+	@cargo clippy
 
 test:			## run tests
 	@echo skip

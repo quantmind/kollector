@@ -21,4 +21,4 @@ jobs:
       - name: tests
         run: make test
       - name: push image to github repo
-        run: make push
+        run: make image-push

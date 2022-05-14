@@ -2,7 +2,9 @@ use config::Config;
 extern crate anyhow;
 use slog::{o, Drain, Logger};
 
-// Initialise slog
+/// Initialise slog
+///
+/// If the `json_logs` environment variable is truthy it will enable a json logger
 pub fn init_logging(config: &Config) -> anyhow::Result<Logger> {
     let use_json_logs = config.get_bool("json_logs").unwrap_or_else(|_| false);
     if use_json_logs {
