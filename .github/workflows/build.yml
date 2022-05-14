@@ -1,0 +1,26 @@
+name: build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.QMBOT_GITHUB_TOKEN }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: login to docker repos
+        run: make docker-login
+      - name: login to docker hub
+        run: docker login -u lsbardel -p ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: build image
+        run: make image
+      - name: lint
+        run: make test-lint
+      - name: tests
+        run: make test
+      - name: push image to github repo
+        run: make push

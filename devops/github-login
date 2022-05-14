@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+source ./devops/common
+echo "Logging in to Github ${DOCKER_URL}"
+docker login ${DOCKER_URL} -u qmbot -p ${GITHUB_TOKEN}
+echo "-----------------------------------------"
