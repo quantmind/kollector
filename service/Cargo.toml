@@ -1,0 +1,25 @@
+[package]
+name = "service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common = { path = "../common" }
+gateways = { path = "../gateways" }
+async-channel = "1.6.1"
+clap = { version = "3.1.18", features = ["derive"] }
+dotenv = "0.15.0"
+futures-util = "0.3.21"
+prost = "0.10.3"
+tokio = { version = "^1.18.2", features = ["full"] }
+tokio-stream = "0.1.8"
+tonic = { version = "^0.7.2", features = ["tls", "compression"] }
+slog = "2.7.0"
+ctrlc = "3.2.2"
+prometheus = "0.13.0"
+lazy_static = "1.4.0"
+
+[build-dependencies]
+tonic-build = { version = "^0.7.2", features = ["prost", "compression"] }

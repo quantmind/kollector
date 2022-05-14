@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "common",
+    "gateways",
+    "service"
+]
+
+
+[profile.release]
+opt-level = 3

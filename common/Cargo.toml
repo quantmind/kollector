@@ -1,0 +1,19 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.57"
+async-channel = "1.6.1"
+config = "0.13.1"
+futures-util = "0.3.21"
+serde_json = "1.0.81"
+slog = "2.7.0"
+slog-async = "2.7.0"
+slog-json = "2.6.1"
+slog-term = "2.9.0"
+tokio = { version = "^1.18.2", features = ["full"] }
+tokio-tungstenite = { version="^0.17.1", features = ["native-tls"] }
