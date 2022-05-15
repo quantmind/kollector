@@ -4,6 +4,10 @@ use common::{Book, Context, InnerMessage, WsConsumer};
 use serde_json::{from_value, Value};
 use slog::{info, warn};
 
+/// Bitstamp Gateway
+///
+/// This gatewat stream order book snapshots from
+/// [bitstamp websocket api](https://www.bitstamp.net/websocket/v2/)
 pub struct Bitstamp {
     context: Context<InnerMessage>,
     ws: WsConsumer,

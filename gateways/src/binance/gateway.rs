@@ -1,7 +1,6 @@
 use super::models;
 use super::requests;
 use crate::{Gateway, WsUpdate};
-use async_channel::{unbounded, Receiver, Sender};
 use common::{Book, BookSnapshot, Context, HttpClient, InnerMessage, WsConsumer};
 use serde_json::{from_value, Value};
 use slog::{info, warn};
@@ -9,7 +8,7 @@ use std::collections::HashMap;
 
 struct BookWithBuffer {
     asset: String,
-    buffer: Vec<models::BookUpdate>,
+    updates: Vec<models::BookUpdate>,
     book: Option<Book>,
 }
 
@@ -23,8 +22,6 @@ pub struct Binance {
     max_depth: usize,
     msg_id: usize,
     books: HashMap<String, BookWithBuffer>,
-    depth_request_sender: Sender<String>,
-    depth_request_receiver: Receiver<String>,
 }
 
 impl Gateway for Binance {
@@ -60,7 +57,7 @@ impl Gateway for Binance {
             Ok(o) => {
                 if let Some(data) = o.data {
                     match data {
-                        models::WsData::BookUpdate(ref book) => {
+                        models::WsData::BookUpdate(book) => {
                             return self.book_snapshot(book);
                         }
                         _ => {
@@ -91,18 +88,16 @@ impl Binance {
             .get("binance_spot_url")
             .unwrap_or_else(|_| "https://api.binance.com");
         let ws = WsConsumer::new(&context, ws_url);
-        let (depth_request_sender, depth_request_receiver) = unbounded();
         Self {
             context,
             ws,
             max_depth,
             msg_id: 0,
             books: HashMap::new(),
-            depth_request_sender,
-            depth_request_receiver,
         }
     }
 
+    // Http client
     fn http(&self) -> HttpClient {
         let api_url = self
             .context
@@ -112,8 +107,8 @@ impl Binance {
         HttpClient::new(api_url)
     }
 
-    fn book_snapshot(&mut self, book: &models::BookUpdate) -> Option<WsUpdate> {
-        let asset = book.s.to_lowercase();
+    fn book_snapshot(&mut self, book_update: models::BookUpdate) -> Option<WsUpdate> {
+        let asset = book_update.s.to_lowercase();
         let asset_str = &asset;
         let b = self
             .books
@@ -124,23 +119,26 @@ impl Binance {
                 // pass for now
             }
             None => {
+                // push the update in the buffer
+                b.updates.push(book_update);
                 // fetch the book snapshot via rest
                 let http = self.http();
                 let context = self.context.clone();
+                let request = requests::GetDepth::new(&asset, self.max_depth);
                 tokio::spawn(async move {
-                    let result = http
-                        .request(requests::GetDepth::new(&asset), Some(&context.logger))
-                        .await;
+                    let result = http.request(request, Some(&context.logger)).await;
                     match result {
                         Ok(b) => {
                             let mut book = Book::new(&asset);
                             book.asks.update(&b.asks);
                             book.bids.update(&b.bids);
-                            context.send(InnerMessage::BookSnapshot(BookSnapshot {
-                                name: context.name.to_owned(),
-                                sequence: b.last_update_id,
-                                book,
-                            }));
+                            context
+                                .send(InnerMessage::BookSnapshot(BookSnapshot {
+                                    name: context.name.to_owned(),
+                                    sequence: b.last_update_id,
+                                    book,
+                                }))
+                                .await;
                         }
                         Err(err) => {
                             // pass
@@ -157,7 +155,7 @@ impl BookWithBuffer {
     fn new(asset: &str) -> Self {
         Self {
             asset: asset.to_owned(),
-            buffer: vec![],
+            updates: vec![],
             book: None,
         }
     }

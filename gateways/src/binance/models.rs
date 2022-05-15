@@ -18,6 +18,7 @@ pub struct BookSnapshot {
 #[derive(Debug, Clone, Deserialize)]
 pub struct BookUpdate {
     pub s: String,
+    pub u: usize,
     pub a: Vec<(String, String)>,
     pub b: Vec<(String, String)>,
     #[serde(rename = "E")]

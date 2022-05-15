@@ -21,6 +21,9 @@ cloc:			## Count lines of code - requires cloc
 doc:			## build documentation
 	@cargo doc --workspace --no-deps
 
+doc-open:			## build documentation and open web page
+	@cargo doc --workspace --no-deps --open
+
 docker-login:		## login to docker repos - this is for admins only
 	@./devops/docker-login
 

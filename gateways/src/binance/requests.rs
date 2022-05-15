@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GetDepth {
     symbol: String,
+    limit: usize,
 }
 
 impl Request for GetDepth {
@@ -16,9 +17,10 @@ impl Request for GetDepth {
 }
 
 impl GetDepth {
-    pub fn new(symbol: &str) -> Self {
+    pub fn new(symbol: &str, limit: usize) -> Self {
         Self {
             symbol: symbol.to_owned(),
+            limit,
         }
     }
 }
