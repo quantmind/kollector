@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Kollector","The Kollector is the main the main service"]]});

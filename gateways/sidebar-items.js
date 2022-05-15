@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["WsUpdate","A websocket update"]],"struct":[["Binance","Binance Gateway"],["Bitstamp","Bitstamp Gateway"]],"trait":[["Gateway","A Gateway trait"]]});
