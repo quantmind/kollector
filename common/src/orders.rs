@@ -61,7 +61,38 @@ impl L2 {
         self.orders.is_empty()
     }
 
-    pub fn update(&mut self, price_size: &[(String, String)]) {}
+    /// Set a new price/volume into the book side
+    ///
+    /// # Arguments
+    ///
+    /// * `price` - the price level
+    /// * `volume` - volume fro the price, if 0 the price level will be removed
+    pub fn set(&mut self, price: Decimal, volume: Decimal) {
+        match volume.is_zero() {
+            true => self.orders.remove(&price),
+            false => self.orders.insert(price, volume),
+        };
+    }
+
+    /// Set a new price/volume into the book side
+    ///
+    /// # Arguments
+    ///
+    /// * `price` - the price level
+    /// * `volume` - volume fro the price, if 0 the price level will be removed
+    pub fn set_str(&mut self, price: &str, volume: &str) {
+        self.set(
+            Decimal::from_str(price).unwrap(),
+            Decimal::from_str(volume).unwrap(),
+        )
+    }
+
+    /// Update the order side with a vector of price/volume tuples
+    pub fn update(&mut self, price_volume: &[(String, String)]) {
+        for (price, volume) in price_volume.iter() {
+            self.set_str(price, volume);
+        }
+    }
 
     /// Returns the (price, volume) tuple at the best price if available
     pub fn best(&self) -> Option<(&Decimal, &Decimal)> {

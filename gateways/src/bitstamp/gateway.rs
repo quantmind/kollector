@@ -73,7 +73,7 @@ impl Bitstamp {
     }
 
     fn book_snapshot(&self, book: &models::Book) -> Option<WsUpdate> {
-        let mut ob = Book::new(book.channel.split("_").last().unwrap());
+        let mut ob = Book::new(&book.channel.split("_").last().unwrap().to_lowercase());
         ob.asks.update(&book.data.asks);
         ob.bids.update(&book.data.bids);
         Some(WsUpdate::Book(ob))

@@ -23,9 +23,9 @@ jobs:
       - name: push image to github repo
         run: make image-push
       - name: build documentation
-        run: make doc
+        run: make doc-ci
       - name: publish documentation
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           branch: gh-pages

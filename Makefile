@@ -2,6 +2,7 @@
 $(shell touch .env)
 include .env
 export $(shell sed 's/=.*//' .env)
+RUST_VERSION = 1.60
 
 .PHONY: help build
 
@@ -18,10 +19,10 @@ build:			## build and test
 cloc:			## Count lines of code - requires cloc
 	cloc --exclude-dir=target .
 
-doc:			## build documentation
+doc-ci:			## build documentation
 	@cargo doc --workspace --no-deps
 
-doc-open:			## build documentation and open web page
+doc:			## build documentation and open web page
 	@cargo doc --workspace --no-deps --open
 
 docker-login:		## login to docker repos - this is for admins only
