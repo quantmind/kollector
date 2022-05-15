@@ -3,14 +3,16 @@ use crate::worker::{Context, InnerMessage, WsInfo, WsPayload};
 use anyhow::{Error, Result};
 use async_channel::{unbounded, Receiver, Sender};
 use futures_util::{SinkExt, StreamExt};
-use serde_json::Value;
+use serde::Serialize;
+use serde_json::{to_value, Value};
 use slog::{debug, error, info, warn};
 use std::time::{Duration, Instant};
 use tokio::io;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
 
-// Websocket consumer
-// Listen for new messages from websocket and write new commands into it
+/// Websocket consumer
+///
+/// Listen for new messages from websocket and write new commands into it
 #[derive(Clone)]
 pub struct WsConsumer {
     pub context: Context<InnerMessage>,
@@ -23,6 +25,7 @@ pub struct WsConsumer {
 }
 
 impl WsConsumer {
+    /// Create a new websocket consumer
     pub fn new(context: &Context<InnerMessage>, ws_url: &str) -> Self {
         let (sender, receiver) = unbounded();
         let (heartbeat_sender, heartbeat_receiver) = unbounded();
@@ -44,6 +47,11 @@ impl WsConsumer {
         }
     }
 
+    /// schedule a write into the websocket
+    pub fn write<T: Serialize>(&self, message: T) {
+        self.sender.try_send(to_value(message).unwrap()).unwrap();
+    }
+
     fn payload(&self, value: Value) -> WsPayload {
         WsPayload {
             name: self.context.name.clone(),
@@ -61,7 +69,7 @@ impl WsConsumer {
     }
 
     // coroutine for consuming and writing messages into a websocket
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run(&self) -> Result<()> {
         let mut backoff = Backoff::new(10, 1, 20, 2);
         let logger = self.context.logger.clone();
 
@@ -123,7 +131,7 @@ impl WsConsumer {
         }
     }
 
-    async fn stream<S>(&mut self, mut ws_stream: WebSocketStream<S>) -> Result<()>
+    async fn stream<S>(&self, mut ws_stream: WebSocketStream<S>) -> Result<()>
     where
         S: io::AsyncRead + io::AsyncWrite + Unpin,
     {
@@ -184,7 +192,7 @@ impl WsConsumer {
                 // heartbeat
                 Ok(_) = self.heartbeat_receiver.recv() => {
                     if Instant::now() - last_frame_instant > self.heartbeat && num_messages_since_last_heartbeat == 0 {
-                        warn!(logger, "no messages received since last heartbeat, exit receiving loop and reconnect");
+                        warn!(logger, "{} no messages received since last heartbeat, exit receiving loop and reconnect", self.context.name);
                         return Ok(());
                     } else {
                         debug!(logger, "{} received {} messages since last heartbeat", url, num_messages_since_last_heartbeat);

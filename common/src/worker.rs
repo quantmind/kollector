@@ -1,9 +1,11 @@
 use crate::logging::init_logging;
+use crate::orders::Book;
+use anyhow::Result;
 use async_channel::{unbounded, Receiver, Sender};
 use config::builder::{ConfigBuilder, DefaultState};
 use config::{Config, Environment};
 use serde_json::Value;
-use slog::Logger;
+use slog::{error, info, Logger};
 
 pub type CfgBuilder = ConfigBuilder<DefaultState>;
 
@@ -35,6 +37,13 @@ pub struct WsPayload {
     pub value: Value,
 }
 
+#[derive(Debug, Clone)]
+pub struct BookSnapshot {
+    pub name: String,
+    pub sequence: usize,
+    pub book: Book,
+}
+
 // Internal message enum
 #[derive(Debug, Clone)]
 pub enum InnerMessage {
@@ -50,6 +59,8 @@ pub enum InnerMessage {
     WsDisconnected(WsInfo),
     // websocket payload
     WsPayload(WsPayload),
+    // Orderbook snapshot
+    BookSnapshot(BookSnapshot),
 }
 
 pub fn create_config() -> CfgBuilder {
@@ -76,4 +87,20 @@ impl<T> Context<T> {
     pub async fn send(&self, msg: T) {
         self.sender.send(msg).await.unwrap();
     }
+}
+
+pub async fn wrap_result(context: &Context<InnerMessage>, result: Result<()>) {
+    match result {
+        Ok(()) => {
+            info!(context.logger, "{} - exited", context.name);
+            context.send(InnerMessage::Exit).await;
+        }
+        Err(err) => {
+            error!(
+                context.logger,
+                "{} - unexpected error - {}", context.name, err
+            );
+            context.send(InnerMessage::Failure).await;
+        }
+    };
 }
