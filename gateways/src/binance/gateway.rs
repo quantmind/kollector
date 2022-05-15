@@ -72,6 +72,10 @@ impl Gateway for Binance {
         }
         None
     }
+
+    fn on_book_snapshot(&mut self, snapshot: BookSnapshot) -> Option<Book> {
+        None
+    }
 }
 
 impl Binance {

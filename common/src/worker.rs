@@ -9,7 +9,9 @@ use slog::{error, info, Logger};
 
 pub type CfgBuilder = ConfigBuilder<DefaultState>;
 
-// A context is the basic configuration for a worker
+/// Worker Context
+///
+///  A context is the basic configuration for a worker
 #[derive(Clone)]
 pub struct Context<T> {
     /// name of the worker
@@ -30,10 +32,17 @@ pub struct WsInfo {
     pub url: String,
 }
 
+/// Websocket payload
+///
+/// This struct is used by the websocket consumer to communicate back to the main application
+/// once a new websocket message arrives
 #[derive(Debug, Clone)]
 pub struct WsPayload {
+    /// gateway name
     pub name: String,
+    /// websocket url
     pub url: String,
+    /// message payload
     pub value: Value,
 }
 
@@ -44,22 +53,24 @@ pub struct BookSnapshot {
     pub book: Book,
 }
 
-// Internal message enum
+/// Internal message enum
+///
+/// This enum is used to send messages between different coroutines
 #[derive(Debug, Clone)]
 pub enum InnerMessage {
-    // heartbeat message
+    /// heartbeat message
     Heartbeat,
-    // clean exit
+    /// clean exit
     Exit,
-    // exit with failure
+    /// exit with failure
     Failure,
-    // websocket message
+    /// websocket message
     WsConnected(WsInfo),
-    // websocket disconnect
+    /// websocket disconnect
     WsDisconnected(WsInfo),
-    // websocket payload
+    /// websocket payload
     WsPayload(WsPayload),
-    // Orderbook snapshot
+    /// Orderbook snapshot
     BookSnapshot(BookSnapshot),
 }
 
