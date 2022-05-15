@@ -109,6 +109,17 @@
 <span id="104">104</span>
 <span id="105">105</span>
 <span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::logging::init_logging</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::orders::Book</span>;
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
@@ -120,7 +131,9 @@
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CfgBuilder</span> <span class="op">=</span> <span class="ident">ConfigBuilder</span><span class="op">&lt;</span><span class="ident">DefaultState</span><span class="op">&gt;</span>;
 
-<span class="comment">// A context is the basic configuration for a worker</span>
+<span class="doccomment">/// Worker Context</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  A context is the basic configuration for a worker</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// name of the worker</span>
@@ -141,10 +154,17 @@
     <span class="kw">pub</span> <span class="ident">url</span>: <span class="ident">String</span>,
 }
 
+<span class="doccomment">/// Websocket payload</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This struct is used by the websocket consumer to communicate back to the main application</span>
+<span class="doccomment">/// once a new websocket message arrives</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">WsPayload</span> {
+    <span class="doccomment">/// gateway name</span>
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// websocket url</span>
     <span class="kw">pub</span> <span class="ident">url</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// message payload</span>
     <span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">Value</span>,
 }
 
@@ -155,22 +175,24 @@
     <span class="kw">pub</span> <span class="ident">book</span>: <span class="ident">Book</span>,
 }
 
-<span class="comment">// Internal message enum</span>
+<span class="doccomment">/// Internal message enum</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This enum is used to send messages between different coroutines</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InnerMessage</span> {
-    <span class="comment">// heartbeat message</span>
+    <span class="doccomment">/// heartbeat message</span>
     <span class="ident">Heartbeat</span>,
-    <span class="comment">// clean exit</span>
+    <span class="doccomment">/// clean exit</span>
     <span class="ident">Exit</span>,
-    <span class="comment">// exit with failure</span>
+    <span class="doccomment">/// exit with failure</span>
     <span class="ident">Failure</span>,
-    <span class="comment">// websocket message</span>
+    <span class="doccomment">/// websocket message</span>
     <span class="ident">WsConnected</span>(<span class="ident">WsInfo</span>),
-    <span class="comment">// websocket disconnect</span>
+    <span class="doccomment">/// websocket disconnect</span>
     <span class="ident">WsDisconnected</span>(<span class="ident">WsInfo</span>),
-    <span class="comment">// websocket payload</span>
+    <span class="doccomment">/// websocket payload</span>
     <span class="ident">WsPayload</span>(<span class="ident">WsPayload</span>),
-    <span class="comment">// Orderbook snapshot</span>
+    <span class="doccomment">/// Orderbook snapshot</span>
     <span class="ident">BookSnapshot</span>(<span class="ident">BookSnapshot</span>),
 }
 
