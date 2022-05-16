@@ -3,11 +3,10 @@ use super::requests;
 use crate::{Gateway, WsUpdate};
 use common::{Book, BookSnapshot, Context, HttpClient, InnerMessage, WsConsumer};
 use serde_json::{from_value, Value};
-use slog::{info, warn};
+use slog::warn;
 use std::collections::HashMap;
 
 struct BookWithBuffer {
-    asset: String,
     updates: Vec<models::BookUpdate>,
     book: Option<Book>,
 }
@@ -15,7 +14,9 @@ struct BookWithBuffer {
 /// Binance Gateway
 ///
 /// The binance gateway requires to fetch order book snapshots via Rest
-/// and maintain the book updates in memory
+/// and maintain the book updates in memory with messages coming from the websocket api.
+/// Fr more information check
+/// [binance documentation](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md)
 pub struct Binance {
     context: Context<InnerMessage>,
     ws: WsConsumer,
@@ -74,6 +75,17 @@ impl Gateway for Binance {
     }
 
     fn on_book_snapshot(&mut self, snapshot: BookSnapshot) -> Option<Book> {
+        match self.books.get_mut(&snapshot.name) {
+            Some(bf) => {
+                return bf.on_book_snapshot(&snapshot);
+            }
+            None => {
+                warn!(
+                    self.context.logger,
+                    "received an unknown orderbook snapshot {:?}", snapshot
+                );
+            }
+        }
         None
     }
 }
@@ -87,10 +99,6 @@ impl Binance {
             .cfg
             .get("binance_spot_ws_url")
             .unwrap_or_else(|_| "wss://stream.binance.com:9443/stream");
-        let api_url = context
-            .cfg
-            .get("binance_spot_url")
-            .unwrap_or_else(|_| "https://api.binance.com");
         let ws = WsConsumer::new(&context, ws_url);
         Self {
             context,
@@ -113,18 +121,19 @@ impl Binance {
 
     fn book_snapshot(&mut self, book_update: models::BookUpdate) -> Option<WsUpdate> {
         let asset = book_update.s.to_lowercase();
-        let asset_str = &asset;
-        let b = self
+        let bf = self
             .books
-            .entry(asset_str.to_owned())
-            .or_insert_with(|| BookWithBuffer::new(asset_str));
-        match &b.book {
+            .entry(asset.to_owned())
+            .or_insert_with(|| BookWithBuffer::new());
+        match &mut bf.book {
             Some(book) => {
-                // pass for now
+                book.asks.update(&book_update.a);
+                book.bids.update(&book_update.b);
+                Some(WsUpdate::Book(book.clone()))
             }
             None => {
                 // push the update in the buffer
-                b.updates.push(book_update);
+                bf.updates.push(book_update);
                 // fetch the book snapshot via rest
                 let http = self.http();
                 let context = self.context.clone();
@@ -149,18 +158,29 @@ impl Binance {
                         }
                     }
                 });
+                None
             }
         }
-        None
     }
 }
 
 impl BookWithBuffer {
-    fn new(asset: &str) -> Self {
+    fn new() -> Self {
         Self {
-            asset: asset.to_owned(),
             updates: vec![],
             book: None,
         }
+    }
+
+    fn on_book_snapshot(&mut self, snapshot: &BookSnapshot) -> Option<Book> {
+        let mut book = snapshot.book.clone();
+        for update in self.updates.iter() {
+            if update.u > snapshot.sequence {
+                book.asks.update(&update.a);
+                book.bids.update(&update.b);
+            }
+        }
+        self.book = Some(book.clone());
+        Some(book)
     }
 }

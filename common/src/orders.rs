@@ -38,6 +38,17 @@ pub struct Book {
     pub asks: L2,
 }
 
+/// Calculate ask-bid spread
+pub fn bid_ask_spread(bid: Option<Decimal>, ask: Option<Decimal>) -> Option<Decimal> {
+    match bid {
+        Some(b) => match ask {
+            Some(a) => Some(a - b),
+            None => None,
+        },
+        None => None,
+    }
+}
+
 pub struct L2Iterator<'a> {
     iter: std::collections::btree_map::Iter<'a, Decimal, Decimal>,
     desc: bool,
@@ -106,23 +117,7 @@ impl L2 {
         }
     }
 
-    /// worse price in the orderbook side
-    pub fn worse(&self) -> Option<(&Decimal, &Decimal)> {
-        if self.desc {
-            self.orders.iter().next()
-        } else {
-            self.orders.iter().next_back()
-        }
-    }
-
-    pub fn at(&self, n: usize) -> Option<(&Decimal, &Decimal)> {
-        if self.desc {
-            self.orders.iter().nth_back(n)
-        } else {
-            self.orders.iter().nth(n)
-        }
-    }
-
+    /// Best price in the orderbook side
     pub fn best_price(&self) -> Option<Decimal> {
         match self.best() {
             Some((price, _)) => Some(price.clone()),
@@ -130,34 +125,24 @@ impl L2 {
         }
     }
 
-    pub fn best_price_f32(&self) -> Option<f32> {
-        match self.best() {
-            Some((price, _)) => price.to_f32(),
-            None => None,
+    /// Best of price
+    ///
+    /// This function returns the best price between the price provided and
+    /// the current best price in the orderbook side
+    pub fn best_of(&self, price: Option<Decimal>) -> Option<Decimal> {
+        match self.best_price() {
+            Some(best) => match price {
+                Some(other_price) => match self.desc {
+                    true => Some(cmp::max(best, other_price)),
+                    false => Some(cmp::min(best, other_price)),
+                },
+                None => Some(best),
+            },
+            None => price,
         }
     }
 
-    pub fn worse_price(&self) -> Option<Decimal> {
-        match self.worse() {
-            Some((price, _)) => Some(price.clone()),
-            None => None,
-        }
-    }
-
-    pub fn worse_price_f32(&self) -> Option<f32> {
-        match self.worse() {
-            Some((price, _)) => price.to_f32(),
-            None => None,
-        }
-    }
-
-    pub fn price_at(&self, n: usize) -> Option<Decimal> {
-        match self.at(n) {
-            Some((price, _)) => Some(price.clone()),
-            None => None,
-        }
-    }
-
+    /// (price, volume) tuple Iterator
     pub fn iter(&self) -> L2Iterator {
         L2Iterator {
             iter: self.orders.iter(),
@@ -274,43 +259,6 @@ impl Book {
         match side {
             Side::Bid => &mut self.bids,
             Side::Ask => &mut self.asks,
-        }
-    }
-
-    /// Convert the Book into a Result
-    ///
-    /// This function is useful for raising errors when the book is not consistent
-    ///
-    /// # Arguments
-    ///
-    /// * `asset` - The asset for the book - added to the error message if this is not consistent
-    pub fn as_result(&self, asset: &str) -> Result<(), InconsistentBook> {
-        match self.is_consistent() {
-            true => Ok(()),
-            false => Err(InconsistentBook::new("crossed book", asset)),
-        }
-    }
-
-    /// Calculate the total volume up to `depth` and the book bid/ask imbalance.
-    ///
-    /// It returns a tuple of (volume, imbalance).
-    /// The imbalance is a number between -1 and 1.
-    ///
-    /// * Imbalance 0 means the book is perfectly balanced
-    /// * Imbalance 1 means the book is fully on the bid side (buy pressure)
-    /// * Imbalance -1 means the book is fully on the ask side (sell pressure)
-    ///
-    /// # Arguments
-    ///
-    /// * `depth` - An integer that specifies the number of price levels to include in the cumulative sum
-    /// * `decay` - A float for applying an exponential decay rate to depths, set to 0 for no decay
-    pub fn volume_and_imbalance(&self, depth: usize, decay: f32) -> (f32, f32) {
-        let volume_bid = self.bids.depth_volume(depth, decay);
-        let volume_ask = self.asks.depth_volume(depth, decay);
-        let volume = volume_bid + volume_ask;
-        match volume {
-            0.0 => (0.0, 0.0),
-            _ => (volume, (volume_bid - volume_ask) / volume),
         }
     }
 }

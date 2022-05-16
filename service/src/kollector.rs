@@ -1,4 +1,4 @@
-use crate::grpc::{serve_grpc, OrderbookAggregator};
+use crate::grpc::{book_summary, serve_grpc, AssetBooks, OrderbookAggregator};
 use common::{wrap_result, Book, Context, InnerMessage};
 use gateways::{Gateway, WsUpdate};
 use slog::{error, info, warn};
@@ -9,7 +9,7 @@ pub struct Kollector {
     pub context: Context<InnerMessage>,
     pub max_depth: usize,
     gateways: HashMap<String, Box<dyn Gateway>>,
-    books: HashMap<String, HashMap<String, Book>>,
+    books: HashMap<String, AssetBooks>,
     grpc: Option<OrderbookAggregator>,
 }
 
@@ -140,10 +140,15 @@ impl Kollector {
     }
 
     fn update_book(&mut self, name: &str, book: Book) {
-        let asset = self
+        let asset_books = self
             .books
             .entry(book.asset.to_owned())
             .or_insert_with(HashMap::new);
-        asset.insert(name.to_owned(), book);
+        asset_books.insert(name.to_owned(), book);
+        let summary = book_summary(asset_books, self.max_depth);
+        // broadcast the summary to listeners (for now grpc only)
+        if let Some(grpc) = &self.grpc {
+            grpc.inbox.try_send(summary).unwrap();
+        }
     }
 }

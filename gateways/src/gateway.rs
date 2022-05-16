@@ -24,7 +24,7 @@ pub trait Gateway {
     fn on_websocket_message(&mut self, value: Value) -> Option<WsUpdate>;
 
     // handle a book snapshot
-    fn on_book_snapshot(&mut self, snapshot: BookSnapshot) -> Option<Book> {
+    fn on_book_snapshot(&mut self, _snapshot: BookSnapshot) -> Option<Book> {
         None
     }
 

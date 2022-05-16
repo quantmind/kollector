@@ -46,10 +46,17 @@ pub struct WsPayload {
     pub value: Value,
 }
 
+/// Orderbook snapshot message
+///
+/// An orderbook snapshot is a representation of the order boo at a given time.
+/// It can be used as the starting point of an in-memory order book.
 #[derive(Debug, Clone)]
 pub struct BookSnapshot {
+    /// gateway name
     pub name: String,
+    /// sequence number (use this to discard deltas with sequence prior to this)
     pub sequence: usize,
+    /// the order book snapshot
     pub book: Book,
 }
 

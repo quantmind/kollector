@@ -1665,6 +1665,7 @@ dependencies = [
  "lazy_static",
  "prometheus",
  "prost",
+ "rust_decimal",
  "slog",
  "tokio",
  "tokio-stream",
