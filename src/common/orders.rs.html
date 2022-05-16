@@ -267,58 +267,6 @@
 <span id="262">262</span>
 <span id="263">263</span>
 <span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Level 2 Orderbook implementation</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! A level2 order book is a datastructure which maintains ordered price-volume pairs</span>
@@ -357,6 +305,17 @@
     <span class="kw">pub</span> <span class="ident">bids</span>: <span class="ident">L2</span>,
     <span class="doccomment">/// level 2 ask prices &amp; sizes</span>
     <span class="kw">pub</span> <span class="ident">asks</span>: <span class="ident">L2</span>,
+}
+
+<span class="doccomment">/// Calculate ask-bid spread</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bid_ask_spread</span>(<span class="ident">bid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span>, <span class="ident">ask</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">bid</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">b</span>) =&gt; <span class="kw">match</span> <span class="ident">ask</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">a</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">a</span> <span class="op">-</span> <span class="ident">b</span>),
+            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+        },
+        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+    }
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">L2Iterator</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -427,23 +386,7 @@
         }
     }
 
-    <span class="doccomment">/// worse price in the orderbook side</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">worse</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="ident">Decimal</span>, <span class="kw-2">&amp;</span><span class="ident">Decimal</span>)<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">desc</span> {
-            <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">next</span>()
-        } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">next_back</span>()
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="ident">Decimal</span>, <span class="kw-2">&amp;</span><span class="ident">Decimal</span>)<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">desc</span> {
-            <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">nth_back</span>(<span class="ident">n</span>)
-        } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">nth</span>(<span class="ident">n</span>)
-        }
-    }
-
+    <span class="doccomment">/// Best price in the orderbook side</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">best_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">best</span>() {
             <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">price</span>.<span class="ident">clone</span>()),
@@ -451,34 +394,24 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">best_price_f32</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">best</span>() {
-            <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="ident">price</span>.<span class="ident">to_f32</span>(),
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+    <span class="doccomment">/// Best of price</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This function returns the best price between the price provided and</span>
+    <span class="doccomment">/// the current best price in the orderbook side</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">best_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">best_price</span>() {
+            <span class="prelude-val">Some</span>(<span class="ident">best</span>) =&gt; <span class="kw">match</span> <span class="ident">price</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">other_price</span>) =&gt; <span class="kw">match</span> <span class="self">self</span>.<span class="ident">desc</span> {
+                    <span class="bool-val">true</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">cmp::max</span>(<span class="ident">best</span>, <span class="ident">other_price</span>)),
+                    <span class="bool-val">false</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">cmp::min</span>(<span class="ident">best</span>, <span class="ident">other_price</span>)),
+                },
+                <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">best</span>),
+            },
+            <span class="prelude-val">None</span> =&gt; <span class="ident">price</span>,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">worse_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">worse</span>() {
-            <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">price</span>.<span class="ident">clone</span>()),
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">worse_price_f32</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">worse</span>() {
-            <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="ident">price</span>.<span class="ident">to_f32</span>(),
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">price_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">at</span>(<span class="ident">n</span>) {
-            <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">price</span>.<span class="ident">clone</span>()),
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
-        }
-    }
-
+    <span class="doccomment">/// (price, volume) tuple Iterator</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">L2Iterator</span> {
         <span class="ident">L2Iterator</span> {
             <span class="ident">iter</span>: <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>(),
@@ -595,43 +528,6 @@
         <span class="kw">match</span> <span class="ident">side</span> {
             <span class="ident">Side::Bid</span> =&gt; <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">bids</span>,
             <span class="ident">Side::Ask</span> =&gt; <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">asks</span>,
-        }
-    }
-
-    <span class="doccomment">/// Convert the Book into a Result</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This function is useful for raising errors when the book is not consistent</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Arguments</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// * `asset` - The asset for the book - added to the error message if this is not consistent</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_result</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">asset</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">InconsistentBook</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">is_consistent</span>() {
-            <span class="bool-val">true</span> =&gt; <span class="prelude-val">Ok</span>(()),
-            <span class="bool-val">false</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">InconsistentBook::new</span>(<span class="string">&quot;crossed book&quot;</span>, <span class="ident">asset</span>)),
-        }
-    }
-
-    <span class="doccomment">/// Calculate the total volume up to `depth` and the book bid/ask imbalance.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// It returns a tuple of (volume, imbalance).</span>
-    <span class="doccomment">/// The imbalance is a number between -1 and 1.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// * Imbalance 0 means the book is perfectly balanced</span>
-    <span class="doccomment">/// * Imbalance 1 means the book is fully on the bid side (buy pressure)</span>
-    <span class="doccomment">/// * Imbalance -1 means the book is fully on the ask side (sell pressure)</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Arguments</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// * `depth` - An integer that specifies the number of price levels to include in the cumulative sum</span>
-    <span class="doccomment">/// * `decay` - A float for applying an exponential decay rate to depths, set to 0 for no decay</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">volume_and_imbalance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">depth</span>: <span class="ident">usize</span>, <span class="ident">decay</span>: <span class="ident">f32</span>) -&gt; (<span class="ident">f32</span>, <span class="ident">f32</span>) {
-        <span class="kw">let</span> <span class="ident">volume_bid</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">bids</span>.<span class="ident">depth_volume</span>(<span class="ident">depth</span>, <span class="ident">decay</span>);
-        <span class="kw">let</span> <span class="ident">volume_ask</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">asks</span>.<span class="ident">depth_volume</span>(<span class="ident">depth</span>, <span class="ident">decay</span>);
-        <span class="kw">let</span> <span class="ident">volume</span> <span class="op">=</span> <span class="ident">volume_bid</span> <span class="op">+</span> <span class="ident">volume_ask</span>;
-        <span class="kw">match</span> <span class="ident">volume</span> {
-            <span class="number">0.0</span> =&gt; (<span class="number">0.0</span>, <span class="number">0.0</span>),
-            <span class="kw">_</span> =&gt; (<span class="ident">volume</span>, (<span class="ident">volume_bid</span> <span class="op">-</span> <span class="ident">volume_ask</span>) <span class="op">/</span> <span class="ident">volume</span>),
         }
     }
 }

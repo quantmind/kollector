@@ -120,6 +120,13 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::logging::init_logging</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::orders::Book</span>;
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
@@ -168,10 +175,17 @@
     <span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">Value</span>,
 }
 
+<span class="doccomment">/// Orderbook snapshot message</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// An orderbook snapshot is a representation of the order boo at a given time.</span>
+<span class="doccomment">/// It can be used as the starting point of an in-memory order book.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BookSnapshot</span> {
+    <span class="doccomment">/// gateway name</span>
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// sequence number (use this to discard deltas with sequence prior to this)</span>
     <span class="kw">pub</span> <span class="ident">sequence</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// the order book snapshot</span>
     <span class="kw">pub</span> <span class="ident">book</span>: <span class="ident">Book</span>,
 }
 
