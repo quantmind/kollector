@@ -12,6 +12,7 @@ use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status};
 
+/// An hashmap mapping an exchange name with the orderbook for a given asset
 pub type AssetBooks = HashMap<String, Book>;
 type BookSummaryResult<T> = Result<Response<T>, Status>;
 

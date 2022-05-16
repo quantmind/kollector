@@ -29,6 +29,10 @@ impl WsConsumer {
     pub fn new(context: &Context<InnerMessage>, ws_url: &str) -> Self {
         let (sender, receiver) = unbounded();
         let (heartbeat_sender, heartbeat_receiver) = unbounded();
+        let heartbeat_millis = context
+            .cfg
+            .get_int("websocket_heartbeat")
+            .unwrap_or_else(|_| 5000) as u64;
         WsConsumer {
             context: context.clone(),
             sender,
@@ -36,7 +40,7 @@ impl WsConsumer {
             heartbeat_sender,
             heartbeat_receiver,
             ws_url: ws_url.to_string(),
-            heartbeat: Duration::from_millis(5000),
+            heartbeat: Duration::from_millis(heartbeat_millis),
         }
     }
 

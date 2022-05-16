@@ -19,7 +19,7 @@ impl Request for GetDepth {
 impl GetDepth {
     pub fn new(symbol: &str, limit: usize) -> Self {
         Self {
-            symbol: symbol.to_owned(),
+            symbol: symbol.to_uppercase().to_owned(),
             limit,
         }
     }

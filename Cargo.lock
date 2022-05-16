@@ -585,6 +585,7 @@ dependencies = [
 name = "gateways"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-channel",
  "common",
  "futures-util",

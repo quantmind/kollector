@@ -8,6 +8,7 @@ repository = "https://github.com/quantmind/kollector"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.57"
 async-channel = "1.6.1"
 common = { path = "../common" }
 futures-util = "0.3.21"

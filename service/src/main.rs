@@ -1,4 +1,3 @@
-//! GRPC Service exposing streaming endpoint of order book updates
 use clap::Parser;
 use gateways::{Binance, Bitstamp};
 use service::Kollector;

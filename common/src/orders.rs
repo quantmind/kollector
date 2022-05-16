@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::{cmp, fmt};
 
+/// Orderbook side
 pub enum Side {
     Bid,
     Ask,
@@ -117,7 +118,7 @@ impl L2 {
         }
     }
 
-    /// Best price in the orderbook side
+    /// Best price in the l2 side
     pub fn best_price(&self) -> Option<Decimal> {
         match self.best() {
             Some((price, _)) => Some(price.clone()),
@@ -128,7 +129,7 @@ impl L2 {
     /// Best of price
     ///
     /// This function returns the best price between the price provided and
-    /// the current best price in the orderbook side
+    /// the current best price in the l2 side
     pub fn best_of(&self, price: Option<Decimal>) -> Option<Decimal> {
         match self.best_price() {
             Some(best) => match price {
@@ -148,23 +149,6 @@ impl L2 {
             iter: self.orders.iter(),
             desc: self.desc,
         }
-    }
-
-    /// Calculate the cumulative volume up to a given depth
-    ///
-    /// # Arguments
-    ///
-    /// * `depth` - An integer that specifies the number of price levels to include in the cumulative sum
-    /// * `decay` - A float for applying an exponential decay rate to depths, set to 0 for no decay
-    pub fn depth_volume(&self, depth: usize, decay: f32) -> f32 {
-        let mut volume = 0.0;
-        for (i, (_, size)) in self.iter().enumerate() {
-            if i >= depth {
-                return volume;
-            }
-            volume += size.to_f32().unwrap() * (-decay * i.to_f32().unwrap()).exp();
-        }
-        volume
     }
 
     fn clear(&mut self) {

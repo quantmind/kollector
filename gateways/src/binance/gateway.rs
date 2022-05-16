@@ -3,19 +3,20 @@ use super::requests;
 use crate::{Gateway, WsUpdate};
 use common::{Book, BookSnapshot, Context, HttpClient, InnerMessage, WsConsumer};
 use serde_json::{from_value, Value};
-use slog::warn;
+use slog::{error, info, warn};
 use std::collections::HashMap;
 
 struct BookWithBuffer {
     updates: Vec<models::BookUpdate>,
     book: Option<Book>,
+    fetching_snapshot: bool,
 }
 
 /// Binance Gateway
 ///
 /// The binance gateway requires to fetch order book snapshots via Rest
 /// and maintain the book updates in memory with messages coming from the websocket api.
-/// Fr more information check
+/// For more information check
 /// [binance documentation](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md)
 pub struct Binance {
     context: Context<InnerMessage>,
@@ -75,8 +76,12 @@ impl Gateway for Binance {
     }
 
     fn on_book_snapshot(&mut self, snapshot: BookSnapshot) -> Option<Book> {
-        match self.books.get_mut(&snapshot.name) {
+        match self.books.get_mut(&snapshot.book.asset) {
             Some(bf) => {
+                info!(
+                    self.context.logger,
+                    "{} received an orderbook snapshot {}", snapshot.name, snapshot.book.asset
+                );
                 return bf.on_book_snapshot(&snapshot);
             }
             None => {
@@ -135,29 +140,40 @@ impl Binance {
                 // push the update in the buffer
                 bf.updates.push(book_update);
                 // fetch the book snapshot via rest
-                let http = self.http();
-                let context = self.context.clone();
-                let request = requests::GetDepth::new(&asset, self.max_depth);
-                tokio::spawn(async move {
-                    let result = http.request(request, Some(&context.logger)).await;
-                    match result {
-                        Ok(b) => {
-                            let mut book = Book::new(&asset);
-                            book.asks.update(&b.asks);
-                            book.bids.update(&b.bids);
-                            context
-                                .send(InnerMessage::BookSnapshot(BookSnapshot {
-                                    name: context.name.to_owned(),
-                                    sequence: b.last_update_id,
-                                    book,
-                                }))
-                                .await;
+                if !bf.fetching_snapshot {
+                    bf.fetching_snapshot = true;
+                    let http = self.http();
+                    let context = self.context.clone();
+                    let request = requests::GetDepth::new(&asset, 1000);
+                    tokio::spawn(async move {
+                        info!(
+                            context.logger,
+                            "{} fetching orderbook snapshot via rest", context.name
+                        );
+                        let result = http.request(request, Some(&context.logger)).await;
+                        match result {
+                            Ok(b) => {
+                                let mut book = Book::new(&asset);
+                                book.asks.update(&b.asks);
+                                book.bids.update(&b.bids);
+                                context
+                                    .send(InnerMessage::BookSnapshot(BookSnapshot {
+                                        name: context.name.to_owned(),
+                                        sequence: b.last_update_id,
+                                        book,
+                                    }))
+                                    .await;
+                            }
+                            Err(err) => {
+                                error!(
+                                    context.logger,
+                                    "{} - unexpected error - {}", context.name, err
+                                );
+                                context.send(InnerMessage::Failure).await;
+                            }
                         }
-                        Err(err) => {
-                            // pass
-                        }
-                    }
-                });
+                    });
+                }
                 None
             }
         }
@@ -169,6 +185,7 @@ impl BookWithBuffer {
         Self {
             updates: vec![],
             book: None,
+            fetching_snapshot: false,
         }
     }
 
