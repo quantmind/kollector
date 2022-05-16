@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Kollector","The Kollector is the main the main service"]]});
+initSidebarItems({"fn":[["book_summary","Extract the book Summary protobuf message from asset order books from exchanges"],["serve_grpc","Start serving the GRPC"]],"mod":[["orderbook",""]],"struct":[["Kollector","The Kollector is the main the main service"],["OrderbookAggregator","Orderbook Aggregator GRPC server"]],"type":[["AssetBooks","An hashmap mapping an exchange name with the orderbook for a given asset"]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["OrderbookAggregatorServer",""]],"trait":[["OrderbookAggregator","Generated trait containing gRPC methods that should be implemented for use with OrderbookAggregatorServer."]]});

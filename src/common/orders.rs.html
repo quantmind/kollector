@@ -251,22 +251,6 @@
 <span id="246">246</span>
 <span id="247">247</span>
 <span id="248">248</span>
-<span id="249">249</span>
-<span id="250">250</span>
-<span id="251">251</span>
-<span id="252">252</span>
-<span id="253">253</span>
-<span id="254">254</span>
-<span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Level 2 Orderbook implementation</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! A level2 order book is a datastructure which maintains ordered price-volume pairs</span>
@@ -275,6 +259,7 @@
 <span class="kw">use</span> <span class="ident">std::error::Error</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp</span>, <span class="ident">fmt</span>};
 
+<span class="doccomment">/// Orderbook side</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Side</span> {
     <span class="ident">Bid</span>,
     <span class="ident">Ask</span>,
@@ -386,7 +371,7 @@
         }
     }
 
-    <span class="doccomment">/// Best price in the orderbook side</span>
+    <span class="doccomment">/// Best price in the l2 side</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">best_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">best</span>() {
             <span class="prelude-val">Some</span>((<span class="ident">price</span>, <span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">price</span>.<span class="ident">clone</span>()),
@@ -397,7 +382,7 @@
     <span class="doccomment">/// Best of price</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This function returns the best price between the price provided and</span>
-    <span class="doccomment">/// the current best price in the orderbook side</span>
+    <span class="doccomment">/// the current best price in the l2 side</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">best_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Decimal</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">best_price</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">best</span>) =&gt; <span class="kw">match</span> <span class="ident">price</span> {
@@ -417,23 +402,6 @@
             <span class="ident">iter</span>: <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>(),
             <span class="ident">desc</span>: <span class="self">self</span>.<span class="ident">desc</span>,
         }
-    }
-
-    <span class="doccomment">/// Calculate the cumulative volume up to a given depth</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Arguments</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// * `depth` - An integer that specifies the number of price levels to include in the cumulative sum</span>
-    <span class="doccomment">/// * `decay` - A float for applying an exponential decay rate to depths, set to 0 for no decay</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">depth_volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">depth</span>: <span class="ident">usize</span>, <span class="ident">decay</span>: <span class="ident">f32</span>) -&gt; <span class="ident">f32</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">volume</span> <span class="op">=</span> <span class="number">0.0</span>;
-        <span class="kw">for</span> (<span class="ident">i</span>, (<span class="kw">_</span>, <span class="ident">size</span>)) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">depth</span> {
-                <span class="kw">return</span> <span class="ident">volume</span>;
-            }
-            <span class="ident">volume</span> <span class="op">+</span><span class="op">=</span> <span class="ident">size</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>() <span class="op">*</span> (<span class="op">-</span><span class="ident">decay</span> <span class="op">*</span> <span class="ident">i</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>()).<span class="ident">exp</span>();
-        }
-        <span class="ident">volume</span>
     }
 
     <span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {

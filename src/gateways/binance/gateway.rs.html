@@ -189,24 +189,42 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::models</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::requests</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Gateway</span>, <span class="ident">WsUpdate</span>};
 <span class="kw">use</span> <span class="ident">common</span>::{<span class="ident">Book</span>, <span class="ident">BookSnapshot</span>, <span class="ident">Context</span>, <span class="ident">HttpClient</span>, <span class="ident">InnerMessage</span>, <span class="ident">WsConsumer</span>};
 <span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">from_value</span>, <span class="ident">Value</span>};
-<span class="kw">use</span> <span class="ident">slog::warn</span>;
+<span class="kw">use</span> <span class="ident">slog</span>::{<span class="ident">error</span>, <span class="ident">info</span>, <span class="ident">warn</span>};
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
 <span class="kw">struct</span> <span class="ident">BookWithBuffer</span> {
     <span class="ident">updates</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">models::BookUpdate</span><span class="op">&gt;</span>,
     <span class="ident">book</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Book</span><span class="op">&gt;</span>,
+    <span class="ident">fetching_snapshot</span>: <span class="ident">bool</span>,
 }
 
 <span class="doccomment">/// Binance Gateway</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The binance gateway requires to fetch order book snapshots via Rest</span>
 <span class="doccomment">/// and maintain the book updates in memory with messages coming from the websocket api.</span>
-<span class="doccomment">/// Fr more information check</span>
+<span class="doccomment">/// For more information check</span>
 <span class="doccomment">/// [binance documentation](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md)</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Binance</span> {
     <span class="ident">context</span>: <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">InnerMessage</span><span class="op">&gt;</span>,
@@ -266,8 +284,12 @@
     }
 
     <span class="kw">fn</span> <span class="ident">on_book_snapshot</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">snapshot</span>: <span class="ident">BookSnapshot</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Book</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">books</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">snapshot</span>.<span class="ident">name</span>) {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">books</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">snapshot</span>.<span class="ident">book</span>.<span class="ident">asset</span>) {
             <span class="prelude-val">Some</span>(<span class="ident">bf</span>) =&gt; {
+                <span class="macro">info!</span>(
+                    <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">logger</span>,
+                    <span class="string">&quot;{} received an orderbook snapshot {}&quot;</span>, <span class="ident">snapshot</span>.<span class="ident">name</span>, <span class="ident">snapshot</span>.<span class="ident">book</span>.<span class="ident">asset</span>
+                );
                 <span class="kw">return</span> <span class="ident">bf</span>.<span class="ident">on_book_snapshot</span>(<span class="kw-2">&amp;</span><span class="ident">snapshot</span>);
             }
             <span class="prelude-val">None</span> =&gt; {
@@ -326,29 +348,40 @@
                 <span class="comment">// push the update in the buffer</span>
                 <span class="ident">bf</span>.<span class="ident">updates</span>.<span class="ident">push</span>(<span class="ident">book_update</span>);
                 <span class="comment">// fetch the book snapshot via rest</span>
-                <span class="kw">let</span> <span class="ident">http</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">http</span>();
-                <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">clone</span>();
-                <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">requests::GetDepth::new</span>(<span class="kw-2">&amp;</span><span class="ident">asset</span>, <span class="self">self</span>.<span class="ident">max_depth</span>);
-                <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-                    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">http</span>.<span class="ident">request</span>(<span class="ident">request</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>.<span class="ident">logger</span>)).<span class="kw">await</span>;
-                    <span class="kw">match</span> <span class="ident">result</span> {
-                        <span class="prelude-val">Ok</span>(<span class="ident">b</span>) =&gt; {
-                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">book</span> <span class="op">=</span> <span class="ident">Book::new</span>(<span class="kw-2">&amp;</span><span class="ident">asset</span>);
-                            <span class="ident">book</span>.<span class="ident">asks</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">asks</span>);
-                            <span class="ident">book</span>.<span class="ident">bids</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">bids</span>);
-                            <span class="ident">context</span>
-                                .<span class="ident">send</span>(<span class="ident">InnerMessage::BookSnapshot</span>(<span class="ident">BookSnapshot</span> {
-                                    <span class="ident">name</span>: <span class="ident">context</span>.<span class="ident">name</span>.<span class="ident">to_owned</span>(),
-                                    <span class="ident">sequence</span>: <span class="ident">b</span>.<span class="ident">last_update_id</span>,
-                                    <span class="ident">book</span>,
-                                }))
-                                .<span class="kw">await</span>;
+                <span class="kw">if</span> <span class="op">!</span><span class="ident">bf</span>.<span class="ident">fetching_snapshot</span> {
+                    <span class="ident">bf</span>.<span class="ident">fetching_snapshot</span> <span class="op">=</span> <span class="bool-val">true</span>;
+                    <span class="kw">let</span> <span class="ident">http</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">http</span>();
+                    <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">clone</span>();
+                    <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">requests::GetDepth::new</span>(<span class="kw-2">&amp;</span><span class="ident">asset</span>, <span class="number">1000</span>);
+                    <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+                        <span class="macro">info!</span>(
+                            <span class="ident">context</span>.<span class="ident">logger</span>,
+                            <span class="string">&quot;{} fetching orderbook snapshot via rest&quot;</span>, <span class="ident">context</span>.<span class="ident">name</span>
+                        );
+                        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">http</span>.<span class="ident">request</span>(<span class="ident">request</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>.<span class="ident">logger</span>)).<span class="kw">await</span>;
+                        <span class="kw">match</span> <span class="ident">result</span> {
+                            <span class="prelude-val">Ok</span>(<span class="ident">b</span>) =&gt; {
+                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">book</span> <span class="op">=</span> <span class="ident">Book::new</span>(<span class="kw-2">&amp;</span><span class="ident">asset</span>);
+                                <span class="ident">book</span>.<span class="ident">asks</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">asks</span>);
+                                <span class="ident">book</span>.<span class="ident">bids</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">bids</span>);
+                                <span class="ident">context</span>
+                                    .<span class="ident">send</span>(<span class="ident">InnerMessage::BookSnapshot</span>(<span class="ident">BookSnapshot</span> {
+                                        <span class="ident">name</span>: <span class="ident">context</span>.<span class="ident">name</span>.<span class="ident">to_owned</span>(),
+                                        <span class="ident">sequence</span>: <span class="ident">b</span>.<span class="ident">last_update_id</span>,
+                                        <span class="ident">book</span>,
+                                    }))
+                                    .<span class="kw">await</span>;
+                            }
+                            <span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; {
+                                <span class="macro">error!</span>(
+                                    <span class="ident">context</span>.<span class="ident">logger</span>,
+                                    <span class="string">&quot;{} - unexpected error - {}&quot;</span>, <span class="ident">context</span>.<span class="ident">name</span>, <span class="ident">err</span>
+                                );
+                                <span class="ident">context</span>.<span class="ident">send</span>(<span class="ident">InnerMessage::Failure</span>).<span class="kw">await</span>;
+                            }
                         }
-                        <span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; {
-                            <span class="comment">// pass</span>
-                        }
-                    }
-                });
+                    });
+                }
                 <span class="prelude-val">None</span>
             }
         }
@@ -360,6 +393,7 @@
         <span class="self">Self</span> {
             <span class="ident">updates</span>: <span class="macro">vec!</span>[],
             <span class="ident">book</span>: <span class="prelude-val">None</span>,
+            <span class="ident">fetching_snapshot</span>: <span class="bool-val">false</span>,
         }
     }
 

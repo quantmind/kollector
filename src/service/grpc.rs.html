@@ -132,6 +132,7 @@
 <span id="127">127</span>
 <span id="128">128</span>
 <span id="129">129</span>
+<span id="130">130</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">orderbook</span> {
     <span class="macro">tonic::include_proto!</span>(<span class="string">&quot;orderbook&quot;</span>);
 }
@@ -146,6 +147,7 @@
 <span class="kw">use</span> <span class="ident">tokio_stream</span>::{<span class="ident">wrappers::ReceiverStream</span>, <span class="ident">StreamExt</span>};
 <span class="kw">use</span> <span class="ident">tonic</span>::{<span class="ident">transport::Server</span>, <span class="ident">Request</span>, <span class="ident">Response</span>, <span class="ident">Status</span>};
 
+<span class="doccomment">/// An hashmap mapping an exchange name with the orderbook for a given asset</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AssetBooks</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Book</span><span class="op">&gt;</span>;
 <span class="kw">type</span> <span class="ident">BookSummaryResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Status</span><span class="op">&gt;</span>;
 
