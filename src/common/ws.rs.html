@@ -211,7 +211,6 @@
 <span id="206">206</span>
 <span id="207">207</span>
 <span id="208">208</span>
-<span id="209">209</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::backoff</span>::{<span class="ident">millis_sleep</span>, <span class="ident">Backoff</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::worker</span>::{<span class="ident">Context</span>, <span class="ident">InnerMessage</span>, <span class="ident">WsInfo</span>, <span class="ident">WsPayload</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
@@ -243,10 +242,9 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span><span class="op">&lt;</span><span class="ident">InnerMessage</span><span class="op">&gt;</span>, <span class="ident">ws_url</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">sender</span>, <span class="ident">receiver</span>) <span class="op">=</span> <span class="ident">unbounded</span>();
         <span class="kw">let</span> (<span class="ident">heartbeat_sender</span>, <span class="ident">heartbeat_receiver</span>) <span class="op">=</span> <span class="ident">unbounded</span>();
-        <span class="kw">let</span> <span class="ident">heartbeat_millis</span> <span class="op">=</span> <span class="ident">context</span>
-            .<span class="ident">cfg</span>
-            .<span class="ident">get_int</span>(<span class="string">&quot;websocket_heartbeat&quot;</span>)
-            .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="number">5000</span>) <span class="kw">as</span> <span class="ident">u64</span>;
+        <span class="kw">let</span> <span class="ident">heartbeat_millis</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">context</span>
+            .<span class="ident">get_or</span>(<span class="string">&quot;websocket_heartbeat&quot;</span>, <span class="number">5000</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;websocket heartbeat&quot;</span>);
         <span class="ident">WsConsumer</span> {
             <span class="ident">context</span>: <span class="ident">context</span>.<span class="ident">clone</span>(),
             <span class="ident">sender</span>,
