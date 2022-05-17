@@ -1656,6 +1656,7 @@ dependencies = [
 name = "service"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-channel",
  "clap",
  "common",
@@ -1663,6 +1664,7 @@ dependencies = [
  "dotenv",
  "futures-util",
  "gateways",
+ "hyper",
  "lazy_static",
  "prometheus",
  "prost",

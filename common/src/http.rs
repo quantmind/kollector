@@ -1,9 +1,6 @@
 use reqwest::{Client, Method, RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json;
-use serde_urlencoded;
-use slog;
 use std::fmt;
 use url::Url;
 
@@ -114,15 +111,15 @@ impl HttpClient {
         match resp.text().await {
             Ok(content) => {
                 if status.is_success() {
-                    serde_json::from_str::<T>(&content).or_else(|err| {
-                        Err(Error::new(
+                    serde_json::from_str::<T>(&content).map_err(|err| {
+                        Error::new(
                             method.clone(),
                             url.clone(),
                             status,
                             ErrorKind::InvalidContentMatch,
                             err.to_string(),
                             content,
-                        ))
+                        )
                     })
                 } else {
                     Err(Error::new(

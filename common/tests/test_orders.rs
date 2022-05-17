@@ -1,11 +1,10 @@
 use common::Book;
 use rust_decimal::prelude::*;
-use rust_decimal_macros::dec;
 
 #[test]
 fn empty_book() {
     let book = Book::new("ethbtc");
-    assert_eq!(book.timestamp, 0);
+    assert_eq!(book.asset, "ethbtc");
     assert_eq!(book.bids.len(), 0);
     assert_eq!(book.asks.len(), 0);
     assert_eq!(book.is_consistent(), true);
@@ -27,6 +26,10 @@ fn insert_asks() {
     let (price, volume) = book.asks.best().unwrap();
     assert_eq!(price.to_string(), "50");
     assert_eq!(volume.to_string(), "65.5");
+    assert_eq!(
+        book.asks.best_price().unwrap(),
+        Decimal::from_str("50.0").unwrap()
+    );
 }
 
 #[test]
@@ -53,4 +56,28 @@ fn inconsistent_book() {
     book.bids.set_str("51.2", "100.0");
     book.asks.set_str("49.1", "25.0");
     assert_eq!(book.is_consistent(), false);
+    assert_eq!(book.spread(), Some(Decimal::from_str("-2.1").unwrap()));
+}
+
+#[test]
+fn insert_best_of() {
+    let mut book = Book::new("ethbtc");
+    book.asks.set_str("50", "65.5");
+    book.asks.set_str("45.0", "35");
+    assert_eq!(
+        book.asks.best_price().unwrap(),
+        Decimal::from_str("45").unwrap()
+    );
+    assert_eq!(
+        book.asks
+            .best_of(Some(Decimal::from_str("48").unwrap()))
+            .unwrap(),
+        Decimal::from_str("45").unwrap()
+    );
+    assert_eq!(
+        book.asks
+            .best_of(Some(Decimal::from_str("43.2").unwrap()))
+            .unwrap(),
+        Decimal::from_str("43.2").unwrap()
+    );
 }

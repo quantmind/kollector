@@ -38,6 +38,8 @@ async fn main() {
     // spawn gateways
     run_gateway!(kollector, Binance);
     run_gateway!(kollector, Bitstamp);
+    // spawn the HTTP server
+    kollector.spawn_http();
     // run the main application
     kollector.run(&app.pairs).await;
 }

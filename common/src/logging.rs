@@ -6,7 +6,7 @@ use slog::{o, Drain, Logger};
 ///
 /// If the `json_logs` environment variable is truthy it will enable a json logger
 pub fn init_logging(config: &Config) -> anyhow::Result<Logger> {
-    let use_json_logs = config.get_bool("json_logs").unwrap_or_else(|_| false);
+    let use_json_logs = config.get_bool("json_logs").unwrap_or(false);
     if use_json_logs {
         let decorator = slog_json::Json::default(std::io::stdout()).fuse();
         let drain = slog_async::Async::new(decorator).build().fuse();

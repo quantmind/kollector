@@ -1,10 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct Event {
-    pub event: String,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Channel {
     channel: String,
@@ -27,13 +22,6 @@ pub struct BookData {
 pub struct Book {
     pub channel: String,
     pub data: BookData,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct BookUpdate {
-    pub product_id: String,
-    pub time: Option<String>,
-    pub changes: Vec<(String, String, String)>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

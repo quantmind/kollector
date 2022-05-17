@@ -1,11 +1,11 @@
 pub mod orderbook {
     tonic::include_proto!("orderbook");
 }
-use async_channel::{unbounded, Receiver, Sender};
-use common::{bid_ask_spread, Book, L2};
+use common::{bid_ask_spread, Book, Context, L2};
 use futures_util::Stream;
 use orderbook::{orderbook_aggregator_server as obs, Empty, Level, Summary};
 use rust_decimal::prelude::*;
+use slog::info;
 use std::collections::HashMap;
 use std::{net::ToSocketAddrs, pin::Pin};
 use tokio::sync::mpsc;
@@ -15,51 +15,50 @@ use tonic::{transport::Server, Request, Response, Status};
 /// An hashmap mapping an exchange name with the orderbook for a given asset
 pub type AssetBooks = HashMap<String, Book>;
 type BookSummaryResult<T> = Result<Response<T>, Status>;
+type GrpcContext = Context<(String, Summary)>;
 
 /// Orderbook Aggregator GRPC server
 ///
 /// This struct implements the BookSummary streamying method for the GRPC server.
 /// The server receive messages from the main application and broadcast them
 /// to grpc upstream clients.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct OrderbookAggregator {
     /// use this to send messages to the Orderbook Aggregator service
-    pub inbox: Sender<Summary>,
-    // internal message receiver
-    receiver: Receiver<Summary>,
+    pub context: GrpcContext,
 }
 
 /// Start serving the GRPC
+///
+/// The port is configured via the `app_grpc_port` environment variable and defaults to 50060.
 pub fn serve_grpc(server: OrderbookAggregator) {
     tokio::spawn(async move {
+        let port: u16 = server
+            .context
+            .get_or("app_grpc_port", 50060)
+            .expect("GRPC port");
+        let addr = format!("[::1]:{}", port)
+            .to_socket_addrs()
+            .unwrap()
+            .next()
+            .unwrap();
+        info!(server.context.logger, "start the GRPC server {}", addr);
         Server::builder()
             .add_service(obs::OrderbookAggregatorServer::new(server))
-            .serve("[::1]:50051".to_socket_addrs().unwrap().next().unwrap())
+            .serve(addr)
             .await
             .unwrap();
     });
 }
 
 /// Extract the book Summary protobuf message from asset order books from exchanges
-pub fn book_summary(asset_books: &AssetBooks, max_depth: usize) -> Summary {
+pub fn book_summary(asset_books: &AssetBooks) -> Summary {
     let mut summary = Summary::default();
     let mut best_ask: Option<Decimal> = None;
     let mut best_bid: Option<Decimal> = None;
     for (exchange, book) in asset_books.iter() {
-        best_ask = update_summary_side(
-            &mut summary.asks,
-            &book.asks,
-            &exchange,
-            max_depth,
-            best_ask,
-        );
-        best_bid = update_summary_side(
-            &mut summary.bids,
-            &book.bids,
-            &exchange,
-            max_depth,
-            best_bid,
-        );
+        best_ask = update_summary_side(&mut summary.asks, &book.asks, exchange, best_ask);
+        best_bid = update_summary_side(&mut summary.bids, &book.bids, exchange, best_bid);
     }
     summary.spread = bid_ask_spread(best_bid, best_ask)
         .unwrap_or(Decimal::ZERO)
@@ -72,13 +71,9 @@ fn update_summary_side(
     levels: &mut Vec<Level>,
     book_side: &L2,
     exchange: &str,
-    max_depth: usize,
     best_price: Option<Decimal>,
 ) -> Option<Decimal> {
-    for (i, (price, volume)) in book_side.iter().enumerate() {
-        if i >= max_depth {
-            break;
-        }
+    for (price, volume) in book_side.iter() {
         levels.push(Level {
             exchange: exchange.to_owned(),
             price: price.to_f64().unwrap(),
@@ -88,11 +83,12 @@ fn update_summary_side(
     book_side.best_of(best_price)
 }
 
-impl OrderbookAggregator {
+impl Default for OrderbookAggregator {
     /// create a new OrderbookAggregator server
-    pub fn new() -> Self {
-        let (inbox, receiver) = unbounded();
-        Self { inbox, receiver }
+    fn default() -> Self {
+        Self {
+            context: GrpcContext::new("grpc", None),
+        }
     }
 }
 
@@ -102,12 +98,12 @@ impl obs::OrderbookAggregator for OrderbookAggregator {
 
     async fn book_summary(&self, _: Request<Empty>) -> BookSummaryResult<Self::BookSummaryStream> {
         // get a new receiver for this connection
-        let mut message_receiver = self.receiver.clone();
+        let mut message_receiver = self.context.receiver.clone();
 
         let (tx, rx) = mpsc::channel(128);
 
         tokio::spawn(async move {
-            while let Some(message) = message_receiver.next().await {
+            while let Some((_, message)) = message_receiver.next().await {
                 match tx.send(Result::<_, Status>::Ok(message)).await {
                     Ok(_) => {
                         // item (server response) was queued to be send to client

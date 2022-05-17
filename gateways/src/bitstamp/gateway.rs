@@ -57,13 +57,13 @@ impl Gateway for Bitstamp {
 }
 
 impl Bitstamp {
+    /// Create a new Bitstamp gateway
     pub fn new(context: &Context<InnerMessage>, max_depth: usize) -> Self {
         let mut context = context.clone();
         context.name = "bitstamp".to_owned();
-        let ws_url = context
-            .cfg
-            .get("bitstamp_ws_url")
-            .unwrap_or_else(|_| "wss://ws.bitstamp.net");
+        let ws_url: &str = context
+            .get_or("bitstamp_ws_url", "wss://ws.bitstamp.net")
+            .expect("bitstamp_ws_url");
         let ws = WsConsumer::new(&context, ws_url);
         Self {
             context,
@@ -73,9 +73,9 @@ impl Bitstamp {
     }
 
     fn book_snapshot(&self, book: &models::Book) -> Option<WsUpdate> {
-        let mut ob = Book::new(&book.channel.split("_").last().unwrap().to_lowercase());
+        let mut ob = Book::new(&book.channel.split('_').last().unwrap().to_lowercase());
         ob.asks.update(&book.data.asks);
         ob.bids.update(&book.data.bids);
-        Some(WsUpdate::Book(ob))
+        Some(WsUpdate::Book(ob.trim(self.max_depth)))
     }
 }

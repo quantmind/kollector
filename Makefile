@@ -36,7 +36,7 @@ image-push:		## push image to repo
 
 lint:			## format code
 	@cargo fmt
-	@cargo clippy
+	@cargo clippy --fix
 
 test:			## run tests
 	@echo skip

@@ -3,7 +3,8 @@ use crate::orders::Book;
 use anyhow::Result;
 use async_channel::{unbounded, Receiver, Sender};
 use config::builder::{ConfigBuilder, DefaultState};
-use config::{Config, Environment};
+use config::{Config, ConfigError, Environment};
+use serde::Deserialize;
 use serde_json::Value;
 use slog::{error, info, Logger};
 
@@ -81,6 +82,9 @@ pub enum InnerMessage {
     BookSnapshot(BookSnapshot),
 }
 
+/// A context for a courotine worker
+pub type WorkerContext = Context<InnerMessage>;
+
 pub fn create_config() -> CfgBuilder {
     Config::builder().add_source(Environment::default())
 }
@@ -100,6 +104,25 @@ impl<T> Context<T> {
             sender,
             receiver,
         }
+    }
+
+    /// Get a value from config or a default one
+    pub fn get_or<'de, C: Deserialize<'de>>(
+        &self,
+        key: &str,
+        default: C,
+    ) -> Result<C, ConfigError> {
+        let v = self.cfg.get(key);
+
+        if let Err(ConfigError::NotFound(_)) = v {
+            Ok(default)
+        } else {
+            v
+        }
+    }
+
+    pub fn try_send(&self, msg: T) {
+        self.sender.try_send(msg).unwrap();
     }
 
     pub async fn send(&self, msg: T) {

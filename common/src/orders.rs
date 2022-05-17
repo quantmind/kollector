@@ -6,6 +6,8 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::{cmp, fmt};
 
+type L2Map = BTreeMap<Decimal, Decimal>;
+
 /// Orderbook side
 pub enum Side {
     Bid,
@@ -16,14 +18,14 @@ pub enum Side {
 #[derive(Clone, Debug)]
 pub struct L2 {
     /// ordered mapping of prices to volumes
-    orders: BTreeMap<Decimal, Decimal>,
+    orders: L2Map,
     desc: bool,
 }
 
 #[derive(Debug)]
 pub struct InconsistentBook {
-    details: String,
-    asset: String,
+    pub details: String,
+    pub asset: String,
 }
 
 /// A `Book` represents a level 2 order book data structure
@@ -31,8 +33,6 @@ pub struct InconsistentBook {
 pub struct Book {
     /// asset name
     pub asset: String,
-    /// last timestamp the book was updated
-    pub timestamp: usize,
     /// level 2 bid prices & sizes
     pub bids: L2,
     /// level 2 ask prices & sizes
@@ -42,10 +42,7 @@ pub struct Book {
 /// Calculate ask-bid spread
 pub fn bid_ask_spread(bid: Option<Decimal>, ask: Option<Decimal>) -> Option<Decimal> {
     match bid {
-        Some(b) => match ask {
-            Some(a) => Some(a - b),
-            None => None,
-        },
+        Some(b) => ask.map(|a| a - b),
         None => None,
     }
 }
@@ -120,10 +117,7 @@ impl L2 {
 
     /// Best price in the l2 side
     pub fn best_price(&self) -> Option<Decimal> {
-        match self.best() {
-            Some((price, _)) => Some(price.clone()),
-            None => None,
-        }
+        self.best().map(|(price, _)| *price)
     }
 
     /// Best of price
@@ -151,8 +145,19 @@ impl L2 {
         }
     }
 
-    fn clear(&mut self) {
-        self.orders.clear();
+    /// return a trimmed version of the L2 side
+    pub fn trim(&self, max_depth: usize) -> Self {
+        let mut orders = L2Map::new();
+        for (i, (price, volume)) in self.orders.iter().enumerate() {
+            if i >= max_depth {
+                break;
+            }
+            orders.insert(*price, *volume);
+        }
+        Self {
+            orders,
+            desc: self.desc,
+        }
     }
 }
 
@@ -192,7 +197,6 @@ impl Book {
     pub fn new(asset: &str) -> Self {
         Self {
             asset: asset.to_owned(),
-            timestamp: 0,
             bids: L2::new(true),
             asks: L2::new(false),
         }
@@ -214,35 +218,15 @@ impl Book {
         bid < ask
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.bids.is_empty() && self.asks.is_empty()
+    pub fn spread(&self) -> Option<Decimal> {
+        bid_ask_spread(self.bids.best_price(), self.asks.best_price())
     }
 
-    pub fn get_max_depth(&self) -> usize {
-        cmp::max(self.bids.len(), self.asks.len())
-    }
-
-    pub fn get_total_depth(&self) -> usize {
-        self.bids.len() + self.asks.len()
-    }
-
-    /// Clear the book
-    pub fn clear(&mut self) {
-        self.bids.clear();
-        self.asks.clear();
-    }
-
-    pub fn get_side(&self, side: &Side) -> &L2 {
-        match side {
-            Side::Bid => &self.bids,
-            Side::Ask => &self.asks,
-        }
-    }
-
-    pub fn get_side_mut(&mut self, side: &Side) -> &mut L2 {
-        match side {
-            Side::Bid => &mut self.bids,
-            Side::Ask => &mut self.asks,
+    pub fn trim(&self, max_depth: usize) -> Self {
+        Self {
+            asset: self.asset.to_owned(),
+            asks: self.asks.trim(max_depth),
+            bids: self.bids.trim(max_depth),
         }
     }
 }

@@ -62,9 +62,6 @@ impl Gateway for Binance {
                         models::WsData::BookUpdate(book) => {
                             return self.book_snapshot(book);
                         }
-                        _ => {
-                            warn!(self.context.logger, "{}", value);
-                        }
                     }
                 };
             }
@@ -82,7 +79,7 @@ impl Gateway for Binance {
                     self.context.logger,
                     "{} received an orderbook snapshot {}", snapshot.name, snapshot.book.asset
                 );
-                return bf.on_book_snapshot(&snapshot);
+                return bf.on_book_snapshot(&snapshot, self.max_depth);
             }
             None => {
                 warn!(
@@ -100,10 +97,12 @@ impl Binance {
     pub fn new(context: &Context<InnerMessage>, max_depth: usize) -> Self {
         let mut context = context.clone();
         context.name = "binance".to_owned();
-        let ws_url = context
-            .cfg
-            .get("binance_spot_ws_url")
-            .unwrap_or_else(|_| "wss://stream.binance.com:9443/stream");
+        let ws_url: &str = context
+            .get_or(
+                "binance_spot_ws_url",
+                "wss://stream.binance.com:9443/stream",
+            )
+            .expect("Binance websocket url");
         let ws = WsConsumer::new(&context, ws_url);
         Self {
             context,
@@ -116,11 +115,10 @@ impl Binance {
 
     // Http client
     fn http(&self) -> HttpClient {
-        let api_url = self
+        let api_url: &str = self
             .context
-            .cfg
-            .get("binance_spot_url")
-            .unwrap_or_else(|_| "https://api.binance.com");
+            .get_or("binance_spot_url", "https://api.binance.com")
+            .expect("Binance api url");
         HttpClient::new(api_url)
     }
 
@@ -129,7 +127,7 @@ impl Binance {
         let bf = self
             .books
             .entry(asset.to_owned())
-            .or_insert_with(|| BookWithBuffer::new());
+            .or_insert_with(BookWithBuffer::new);
         match &mut bf.book {
             Some(book) => {
                 book.asks.update(&book_update.a);
@@ -189,7 +187,7 @@ impl BookWithBuffer {
         }
     }
 
-    fn on_book_snapshot(&mut self, snapshot: &BookSnapshot) -> Option<Book> {
+    fn on_book_snapshot(&mut self, snapshot: &BookSnapshot, max_depth: usize) -> Option<Book> {
         let mut book = snapshot.book.clone();
         for update in self.updates.iter() {
             if update.u > snapshot.sequence {
@@ -197,7 +195,8 @@ impl BookWithBuffer {
                 book.bids.update(&update.b);
             }
         }
-        self.book = Some(book.clone());
-        Some(book)
+        let ob = book.trim(max_depth);
+        self.book = Some(book);
+        Some(ob)
     }
 }

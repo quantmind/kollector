@@ -29,10 +29,9 @@ impl WsConsumer {
     pub fn new(context: &Context<InnerMessage>, ws_url: &str) -> Self {
         let (sender, receiver) = unbounded();
         let (heartbeat_sender, heartbeat_receiver) = unbounded();
-        let heartbeat_millis = context
-            .cfg
-            .get_int("websocket_heartbeat")
-            .unwrap_or_else(|_| 5000) as u64;
+        let heartbeat_millis: u64 = context
+            .get_or("websocket_heartbeat", 5000)
+            .expect("websocket heartbeat");
         WsConsumer {
             context: context.clone(),
             sender,
