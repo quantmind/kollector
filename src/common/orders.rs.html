@@ -382,10 +382,9 @@
         }
     }
 
-    <span class="doccomment">/// return a trimmed version of the L2 side</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">trim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">max_depth</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">trim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">max_depth</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">orders</span> <span class="op">=</span> <span class="ident">L2Map::new</span>();
-        <span class="kw">for</span> (<span class="ident">i</span>, (<span class="ident">price</span>, <span class="ident">volume</span>)) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+        <span class="kw">for</span> (<span class="ident">i</span>, (<span class="ident">price</span>, <span class="ident">volume</span>)) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">max_depth</span> {
                 <span class="kw">break</span>;
             }
@@ -459,6 +458,7 @@
         <span class="ident">bid_ask_spread</span>(<span class="self">self</span>.<span class="ident">bids</span>.<span class="ident">best_price</span>(), <span class="self">self</span>.<span class="ident">asks</span>.<span class="ident">best_price</span>())
     }
 
+    <span class="doccomment">/// Return a new book trimmed a max depth</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">trim</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">max_depth</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">asset</span>: <span class="self">self</span>.<span class="ident">asset</span>.<span class="ident">to_owned</span>(),
