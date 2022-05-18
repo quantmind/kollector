@@ -4,7 +4,7 @@ include .env
 export $(shell sed 's/=.*//' .env)
 RUST_VERSION = 1.60
 
-.PHONY: help build
+.PHONY: help build cloc doc-ci doc docker-login image image-push web lint test test-lint
 
 help:
 	@echo ================================================================================
@@ -34,9 +34,15 @@ image:			## build docker image
 image-push:		## push image to repo
 	@echo skip
 
+web:			## build web interface
+	protoc -I ./service/proto orderbook.proto --js_out=import_style=commonjs:web/proto
+
 lint:			## format code
 	@cargo fmt
-	@cargo clippy --fix
+	@cargo clippy
+
+start:			## start dev services
+	@docker-compose  -f devops/docker-compose.yml up
 
 test:			## run tests
 	@echo skip

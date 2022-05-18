@@ -8,6 +8,9 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.QMBOT_GITHUB_TOKEN }}
       DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      AWS_DEFAULT_REGION: eu-west-1
+      AWS_ACCESS_KEY_ID: AKIAU5LDMRBGMQEI4JXP
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
       - name: checkout code
@@ -20,7 +23,7 @@ jobs:
         run: make test-lint
       - name: tests
         run: make test
-      - name: push image to github repo
+      - name: push image docker repos
         run: make image-push
       - name: build documentation
         run: make doc-ci

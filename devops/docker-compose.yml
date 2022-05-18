@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+
+  gateway:
+    image: kong
+    restart: always
+    ports:
+      - 90:8000
+      - 18001:8001
+    environment:
+      KONG_DATABASE: "off"
+    env_file:
+      - ../.env
+
+  kollector:
+    image: kollector
+    build: ../
+    command:
+      - kollector
+      - "-p"
+      - ethbtc
+    ports:
+      - 8050:8050

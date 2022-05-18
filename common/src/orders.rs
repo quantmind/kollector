@@ -145,10 +145,9 @@ impl L2 {
         }
     }
 
-    /// return a trimmed version of the L2 side
-    pub fn trim(&self, max_depth: usize) -> Self {
+    fn trim(&self, max_depth: usize) -> Self {
         let mut orders = L2Map::new();
-        for (i, (price, volume)) in self.orders.iter().enumerate() {
+        for (i, (price, volume)) in self.iter().enumerate() {
             if i >= max_depth {
                 break;
             }
@@ -222,6 +221,7 @@ impl Book {
         bid_ask_spread(self.bids.best_price(), self.asks.best_price())
     }
 
+    /// Return a new book trimmed a max depth
     pub fn trim(&self, max_depth: usize) -> Self {
         Self {
             asset: self.asset.to_owned(),
