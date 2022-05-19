@@ -282,7 +282,7 @@
     }
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wrap_result</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span><span class="op">&lt;</span><span class="ident">InnerMessage</span><span class="op">&gt;</span>, <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>) {
+<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wrap_result</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">WorkerContext</span>, <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>) {
     <span class="kw">match</span> <span class="ident">result</span> {
         <span class="prelude-val">Ok</span>(()) =&gt; {
             <span class="macro">info!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;{} - exited&quot;</span>, <span class="ident">context</span>.<span class="ident">name</span>);
