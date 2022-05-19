@@ -36,6 +36,7 @@ image-push:		## push image to repo
 
 web:			## build web interface
 	protoc -I ./service/proto orderbook.proto --js_out=import_style=commonjs:web/proto
+	protoc -I ./service/proto orderbook.proto --grpc-web_out=import_style=commonjs,mode=grpcwebtext:web/proto
 
 lint:			## format code
 	@cargo fmt

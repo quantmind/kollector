@@ -130,7 +130,7 @@ impl<T> Context<T> {
     }
 }
 
-pub async fn wrap_result(context: &Context<InnerMessage>, result: Result<()>) {
+pub async fn wrap_result(context: &WorkerContext, result: Result<()>) {
     match result {
         Ok(()) => {
             info!(context.logger, "{} - exited", context.name);

@@ -7,9 +7,17 @@ services:
     restart: always
     ports:
       - 90:8000
-      - 18001:8001
+      - 91:8001
+    volumes:
+      - ${PWD}/devops:/home/kong
+    depends_on:
+      - kollector
+    links:
+      - kollector:kollector
     environment:
       KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/home/kong/kong.yml"
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
     env_file:
       - ../.env
 
@@ -22,3 +30,5 @@ services:
       - ethbtc
     ports:
       - 8050:8050
+    environment:
+      APP_GRPC_HOST: "0.0.0.0"

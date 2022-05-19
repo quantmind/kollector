@@ -1,0 +1,21 @@
+_format_version: "2.1"
+_transform: true
+
+services:
+  - name: kollector-status
+    url: http://kollector:8050
+    routes:
+      - name: kollector-http
+        paths:
+          - /rest
+
+  - name: kollector
+    url: http://kollector:50060
+    routes:
+      - name: kollector-grpc
+        strip_path: false
+        paths:
+          - /
+        plugins:
+          - name: grpc-web
+          - name: cors

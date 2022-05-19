@@ -1,7 +1,7 @@
 pub mod orderbook {
     tonic::include_proto!("orderbook");
 }
-use common::{bid_ask_spread, Book, Context, L2};
+use common::{bid_ask_spread, Book, Context, L2, wrap_result, WorkerContext};
 use futures_util::Stream;
 use orderbook::{orderbook_aggregator_server as obs, Empty, Level, Summary};
 use rust_decimal::prelude::*;
@@ -31,23 +31,29 @@ pub struct OrderbookAggregator {
 /// Start serving the GRPC
 ///
 /// The port is configured via the `app_grpc_port` environment variable and defaults to 50060.
-pub fn serve_grpc(server: OrderbookAggregator) {
+pub fn serve_grpc(server: OrderbookAggregator, context: &WorkerContext) {
+    let ctx = context.clone();
     tokio::spawn(async move {
+        let host: String = server
+            .context
+            .get_or("app_grpc_host", "[::1]".to_owned())
+            .expect("GRPC host");
         let port: u16 = server
             .context
             .get_or("app_grpc_port", 50060)
             .expect("GRPC port");
-        let addr = format!("[::1]:{}", port)
+        let addr = format!("{}:{}", host, port)
             .to_socket_addrs()
             .unwrap()
             .next()
             .unwrap();
         info!(server.context.logger, "start the GRPC server {}", addr);
-        Server::builder()
+        let result = Server::builder()
+            .accept_http1(true)
             .add_service(obs::OrderbookAggregatorServer::new(server))
             .serve(addr)
-            .await
-            .unwrap();
+            .await.map_err(anyhow::Error::new);
+        wrap_result(&ctx, result).await;
     });
 }
 
@@ -98,12 +104,13 @@ impl obs::OrderbookAggregator for OrderbookAggregator {
 
     async fn book_summary(&self, _: Request<Empty>) -> BookSummaryResult<Self::BookSummaryStream> {
         // get a new receiver for this connection
-        let mut message_receiver = self.context.receiver.clone();
+        let mut context = self.context.clone();
+        info!(context.logger, "new connection");
 
         let (tx, rx) = mpsc::channel(128);
 
         tokio::spawn(async move {
-            while let Some((_, message)) = message_receiver.next().await {
+            while let Some((_, message)) = context.receiver.next().await {
                 match tx.send(Result::<_, Status>::Ok(message)).await {
                     Ok(_) => {
                         // item (server response) was queued to be send to client
@@ -114,7 +121,7 @@ impl obs::OrderbookAggregator for OrderbookAggregator {
                     }
                 }
             }
-            println!("\tclient disconnected");
+            info!(context.logger, "client disconnected");
         });
 
         let output_stream = ReceiverStream::new(rx);

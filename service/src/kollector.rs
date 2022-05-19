@@ -48,7 +48,7 @@ impl Kollector {
     pub fn spawn_grpc(&mut self) {
         let grpc = OrderbookAggregator::default();
         self.grpc = Some(grpc.clone());
-        serve_grpc(grpc);
+        serve_grpc(grpc, &self.context);
     }
 
     /// Add web service
