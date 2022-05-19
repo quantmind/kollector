@@ -1,7 +1,7 @@
 pub mod orderbook {
     tonic::include_proto!("orderbook");
 }
-use common::{bid_ask_spread, Book, Context, L2, wrap_result, WorkerContext};
+use common::{bid_ask_spread, wrap_result, Book, Context, WorkerContext, L2};
 use futures_util::Stream;
 use orderbook::{orderbook_aggregator_server as obs, Empty, Level, Summary};
 use rust_decimal::prelude::*;
@@ -52,7 +52,8 @@ pub fn serve_grpc(server: OrderbookAggregator, context: &WorkerContext) {
             .accept_http1(true)
             .add_service(obs::OrderbookAggregatorServer::new(server))
             .serve(addr)
-            .await.map_err(anyhow::Error::new);
+            .await
+            .map_err(anyhow::Error::new);
         wrap_result(&ctx, result).await;
     });
 }
