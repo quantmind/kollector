@@ -137,12 +137,18 @@
 <span id="132">132</span>
 <span id="133">133</span>
 <span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">orderbook</span> {
     <span class="macro">tonic::include_proto!</span>(<span class="string">&quot;orderbook&quot;</span>);
 }
 <span class="kw">use</span> <span class="ident">common</span>::{<span class="ident">bid_ask_spread</span>, <span class="ident">wrap_result</span>, <span class="ident">Book</span>, <span class="ident">Context</span>, <span class="ident">WorkerContext</span>, <span class="ident">L2</span>};
 <span class="kw">use</span> <span class="ident">futures_util::Stream</span>;
-<span class="kw">use</span> <span class="ident">orderbook</span>::{<span class="ident">orderbook_aggregator_server</span> <span class="kw">as</span> <span class="ident">obs</span>, <span class="ident">Empty</span>, <span class="ident">Level</span>, <span class="ident">Summary</span>};
+<span class="kw">use</span> <span class="ident">orderbook</span>::{<span class="ident">orderbook_aggregator_server</span> <span class="kw">as</span> <span class="ident">obs</span>, <span class="ident">BookRequest</span>, <span class="ident">Level</span>, <span class="ident">Summary</span>};
 <span class="kw">use</span> <span class="ident">rust_decimal::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">slog::info</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
@@ -242,26 +248,32 @@
 <span class="kw">impl</span> <span class="ident">obs::OrderbookAggregator</span> <span class="kw">for</span> <span class="ident">OrderbookAggregator</span> {
     <span class="kw">type</span> <span class="ident">BookSummaryStream</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Summary</span>, <span class="ident">Status</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">book_summary</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Empty</span><span class="op">&gt;</span>) -&gt; <span class="ident">BookSummaryResult</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BookSummaryStream</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">book_summary</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">request</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">BookRequest</span><span class="op">&gt;</span>,
+    ) -&gt; <span class="ident">BookSummaryResult</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BookSummaryStream</span><span class="op">&gt;</span> {
         <span class="comment">// get a new receiver for this connection</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">context</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">clone</span>();
-        <span class="macro">info!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;new connection&quot;</span>);
+        <span class="kw">let</span> <span class="ident">pair</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">get_ref</span>().<span class="ident">pair</span>.<span class="ident">to_owned</span>();
+        <span class="macro">info!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;new connection for pair {}&quot;</span>, <span class="ident">pair</span>);
 
         <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">128</span>);
 
         <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">message</span>)) <span class="op">=</span> <span class="ident">context</span>.<span class="ident">receiver</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-                <span class="kw">match</span> <span class="ident">tx</span>.<span class="ident">send</span>(<span class="prelude-ty">Result</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Status</span><span class="op">&gt;</span><span class="ident">::Ok</span>(<span class="ident">message</span>)).<span class="kw">await</span> {
-                    <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
-                        <span class="comment">// item (server response) was queued to be send to client</span>
-                    }
-                    <span class="prelude-val">Err</span>(<span class="ident">_item</span>) =&gt; {
-                        <span class="comment">// output_stream was build from rx and both are dropped</span>
-                        <span class="kw">break</span>;
+            <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">asset</span>, <span class="ident">message</span>)) <span class="op">=</span> <span class="ident">context</span>.<span class="ident">receiver</span>.<span class="ident">next</span>().<span class="kw">await</span> {
+                <span class="kw">if</span> <span class="ident">pair</span> <span class="op">==</span> <span class="ident">asset</span> {
+                    <span class="kw">match</span> <span class="ident">tx</span>.<span class="ident">send</span>(<span class="prelude-ty">Result</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Status</span><span class="op">&gt;</span><span class="ident">::Ok</span>(<span class="ident">message</span>)).<span class="kw">await</span> {
+                        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
+                            <span class="comment">// item (server response) was queued to be send to client</span>
+                        }
+                        <span class="prelude-val">Err</span>(<span class="ident">_item</span>) =&gt; {
+                            <span class="comment">// output_stream was build from rx and both are dropped</span>
+                            <span class="kw">break</span>;
+                        }
                     }
                 }
             }
-            <span class="macro">info!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;client disconnected&quot;</span>);
+            <span class="macro">info!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;client disconnected from pair {}&quot;</span>, <span class="ident">pair</span>);
         });
 
         <span class="kw">let</span> <span class="ident">output_stream</span> <span class="op">=</span> <span class="ident">ReceiverStream::new</span>(<span class="ident">rx</span>);
