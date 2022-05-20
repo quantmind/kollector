@@ -23,3 +23,6 @@ The command will start:
 * a [kong](https://github.com/Kong/kong) gateway server configured for [grpc-web](https://docs.konghq.com/hub/kong-inc/grpc-web/)
 * the rust `kollector` service
 * the web server serving the front-end application on http://localhost:3000
+
+
+![book](https://user-images.githubusercontent.com/144320/169586918-b3bdbc80-b661-47ac-85ef-a5fd7387721c.gif)
