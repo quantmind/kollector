@@ -132,7 +132,7 @@ impl Binance {
             Some(book) => {
                 book.asks.update(&book_update.a);
                 book.bids.update(&book_update.b);
-                Some(WsUpdate::Book(book.clone()))
+                Some(WsUpdate::Book(book.trim(self.max_depth)))
             }
             None => {
                 // push the update in the buffer

@@ -90,7 +90,10 @@ impl Kollector {
             gateway.subscribe(&assets);
         }
 
-        info!(context.logger, "start {}", context.name);
+        info!(
+            context.logger,
+            "start {} with depth {}", context.name, self.max_depth
+        );
         loop {
             match context.receiver.recv().await {
                 Ok(InnerMessage::Failure) => {

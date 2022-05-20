@@ -3,7 +3,7 @@ pub mod orderbook {
 }
 use common::{bid_ask_spread, wrap_result, Book, Context, WorkerContext, L2};
 use futures_util::Stream;
-use orderbook::{orderbook_aggregator_server as obs, Empty, Level, Summary};
+use orderbook::{orderbook_aggregator_server as obs, BookRequest, Level, Summary};
 use rust_decimal::prelude::*;
 use slog::info;
 use std::collections::HashMap;
@@ -103,26 +103,32 @@ impl Default for OrderbookAggregator {
 impl obs::OrderbookAggregator for OrderbookAggregator {
     type BookSummaryStream = Pin<Box<dyn Stream<Item = Result<Summary, Status>> + Send>>;
 
-    async fn book_summary(&self, _: Request<Empty>) -> BookSummaryResult<Self::BookSummaryStream> {
+    async fn book_summary(
+        &self,
+        request: Request<BookRequest>,
+    ) -> BookSummaryResult<Self::BookSummaryStream> {
         // get a new receiver for this connection
         let mut context = self.context.clone();
-        info!(context.logger, "new connection");
+        let pair = request.get_ref().pair.to_owned();
+        info!(context.logger, "new connection for pair {}", pair);
 
         let (tx, rx) = mpsc::channel(128);
 
         tokio::spawn(async move {
-            while let Some((_, message)) = context.receiver.next().await {
-                match tx.send(Result::<_, Status>::Ok(message)).await {
-                    Ok(_) => {
-                        // item (server response) was queued to be send to client
-                    }
-                    Err(_item) => {
-                        // output_stream was build from rx and both are dropped
-                        break;
+            while let Some((asset, message)) = context.receiver.next().await {
+                if pair == asset {
+                    match tx.send(Result::<_, Status>::Ok(message)).await {
+                        Ok(_) => {
+                            // item (server response) was queued to be send to client
+                        }
+                        Err(_item) => {
+                            // output_stream was build from rx and both are dropped
+                            break;
+                        }
                     }
                 }
             }
-            info!(context.logger, "client disconnected");
+            info!(context.logger, "client disconnected from pair {}", pair);
         });
 
         let output_stream = ReceiverStream::new(rx);

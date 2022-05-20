@@ -19,6 +19,8 @@ jobs:
         run: make docker-login
       - name: build image
         run: make image
+      - name: build web image
+        run: make image-web
       - name: lint
         run: make test-lint
       - name: tests

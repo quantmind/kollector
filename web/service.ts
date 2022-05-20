@@ -1,19 +1,31 @@
 import { OrderbookAggregatorClient } from "./proto/orderbook_grpc_web_pb";
 
-const { Empty } = require("./proto/orderbook_pb.js");
+const { BookRequest, Summary, Level } = require("./proto/orderbook_pb.js");
 
-class Stream {
-  cli: OrderbookAggregatorClient;
+const streamPair = (pair: string, on_data: any) => {
+  // @ts-ignore
+  const cli = new OrderbookAggregatorClient(STREAMING_URL, null, {});
+  const request = new BookRequest();
+  request.setPair(pair);
+  const stream = cli.bookSummary(request, {});
+  stream.on("data", (summary: typeof Summary) => {
+    on_data({
+      spread: summary.getSpread(),
+      asks: summary.getAsksList().map(level_record("asks")),
+      bids: summary.getBidsList().map(level_record("bids")),
+    });
+  });
+  return stream;
+};
 
-  constructor() {
-    this.cli = new OrderbookAggregatorClient("http://localhost:90", null, {});
-  }
+const level_record =
+  (side: string) =>
+  (level: typeof Level): Record<string, string | number> => ({
+    exchange: level.getExchange(),
+    price: level.getPrice(),
+    amount: level.getAmount(),
+    group: `${level.getExchange()} - ${side}`,
+    side,
+  });
 
-  start(on_data: any) {
-    const request = new Empty();
-    const stream = this.cli.bookSummary(request, {});
-    stream.on("data", on_data);
-  }
-}
-
-export default Stream;
+export default streamPair;

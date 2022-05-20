@@ -11,7 +11,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = Function('return this')();
 
-goog.exportSymbol('proto.orderbook.Empty', null, global);
+goog.exportSymbol('proto.orderbook.BookRequest', null, global);
 goog.exportSymbol('proto.orderbook.Level', null, global);
 goog.exportSymbol('proto.orderbook.Summary', null, global);
 
@@ -25,12 +25,12 @@ goog.exportSymbol('proto.orderbook.Summary', null, global);
  * @extends {jspb.Message}
  * @constructor
  */
-proto.orderbook.Empty = function(opt_data) {
+proto.orderbook.BookRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.orderbook.Empty, jspb.Message);
+goog.inherits(proto.orderbook.BookRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
-  proto.orderbook.Empty.displayName = 'proto.orderbook.Empty';
+  proto.orderbook.BookRequest.displayName = 'proto.orderbook.BookRequest';
 }
 
 
@@ -45,8 +45,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     for transitional soy proto support: http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.orderbook.Empty.prototype.toObject = function(opt_includeInstance) {
-  return proto.orderbook.Empty.toObject(opt_includeInstance, this);
+proto.orderbook.BookRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.orderbook.BookRequest.toObject(opt_includeInstance, this);
 };
 
 
@@ -55,13 +55,13 @@ proto.orderbook.Empty.prototype.toObject = function(opt_includeInstance) {
  * @param {boolean|undefined} includeInstance Whether to include the JSPB
  *     instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.orderbook.Empty} msg The msg instance to transform.
+ * @param {!proto.orderbook.BookRequest} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.orderbook.Empty.toObject = function(includeInstance, msg) {
+proto.orderbook.BookRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    pair: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -75,29 +75,33 @@ proto.orderbook.Empty.toObject = function(includeInstance, msg) {
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.orderbook.Empty}
+ * @return {!proto.orderbook.BookRequest}
  */
-proto.orderbook.Empty.deserializeBinary = function(bytes) {
+proto.orderbook.BookRequest.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.orderbook.Empty;
-  return proto.orderbook.Empty.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.orderbook.BookRequest;
+  return proto.orderbook.BookRequest.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.orderbook.Empty} msg The message object to deserialize into.
+ * @param {!proto.orderbook.BookRequest} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.orderbook.Empty}
+ * @return {!proto.orderbook.BookRequest}
  */
-proto.orderbook.Empty.deserializeBinaryFromReader = function(msg, reader) {
+proto.orderbook.BookRequest.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setPair(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -111,9 +115,9 @@ proto.orderbook.Empty.deserializeBinaryFromReader = function(msg, reader) {
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.orderbook.Empty.prototype.serializeBinary = function() {
+proto.orderbook.BookRequest.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.orderbook.Empty.serializeBinaryToWriter(this, writer);
+  proto.orderbook.BookRequest.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -121,12 +125,34 @@ proto.orderbook.Empty.prototype.serializeBinary = function() {
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.orderbook.Empty} message
+ * @param {!proto.orderbook.BookRequest} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.orderbook.Empty.serializeBinaryToWriter = function(message, writer) {
+proto.orderbook.BookRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getPair();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string pair = 1;
+ * @return {string}
+ */
+proto.orderbook.BookRequest.prototype.getPair = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.orderbook.BookRequest.prototype.setPair = function(value) {
+  jspb.Message.setProto3StringField(this, 1, value);
 };
 
 

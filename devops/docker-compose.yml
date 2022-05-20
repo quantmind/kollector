@@ -23,12 +23,18 @@ services:
 
   kollector:
     image: kollector
-    build: ../
+    build: ../devops/kollector.dockerfile
     command:
       - kollector
       - "-p"
-      - ethbtc
+      - btcusdt,ethusdt,ethbtc
     ports:
       - 8050:8050
     environment:
       APP_GRPC_HOST: "0.0.0.0"
+
+  kollector-web:
+    image: kollector-web
+    build: ../devops/web.dockerfile
+    ports:
+      - 3000:3000

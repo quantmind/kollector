@@ -1,6 +1,8 @@
 require("dotenv").config();
 const logger = require("console");
 const path = require("path");
+const webpack = require("webpack");
+
 
 const STATIC_PATH = "/dist/";
 const mode =
@@ -10,7 +12,7 @@ const resolvePath = (relativePath) => path.resolve(PWD, relativePath);
 const env = {
   process: JSON.stringify({}),
   STREAMING_URL: JSON.stringify(
-    process.env.STREAMING_URL || "https://kollector.fluidily.com"
+    process.env.STREAMING_URL || "http://localhost:90"
   ),
 };
 
@@ -21,6 +23,9 @@ const config = {
   entry: {
     block: "./web/Index.tsx",
   },
+  plugins: [
+    new webpack.DefinePlugin(env),
+  ],
   output: {
     publicPath: STATIC_PATH,
     path: resolvePath(`.${STATIC_PATH}`),
