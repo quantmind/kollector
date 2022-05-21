@@ -15,6 +15,9 @@ pub enum WsUpdate {
 pub trait Gateway {
     fn setup(&self) {}
 
+    /// Request book snapshots
+    fn request_snapshot(&mut self) {}
+
     /// gateway name
     fn name(&self) -> &str;
 

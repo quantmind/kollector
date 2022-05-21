@@ -58,7 +58,7 @@ impl Gateway for Bitstamp {
 
 impl Bitstamp {
     /// Create a new Bitstamp gateway
-    pub fn new(context: &Context<InnerMessage>, max_depth: usize) -> Self {
+    pub fn new(context: &Context<InnerMessage>, max_depth: usize, _pairs: &[String]) -> Self {
         let mut context = context.clone();
         context.name = "bitstamp".to_owned();
         let ws_url: &str = context

@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 pub struct Kollector {
     pub context: Context<InnerMessage>,
     pub max_depth: usize,
+    pub pairs: Vec<String>,
     gateways: HashMap<String, Box<dyn Gateway>>,
     books: HashMap<String, AssetBooks>,
     grpc: Option<OrderbookAggregator>,
@@ -16,11 +17,20 @@ pub struct Kollector {
 
 impl Kollector {
     /// Create a new Kollector service
-    pub fn new(max_depth: usize) -> Self {
+    ///
+    /// # Arguments
+    ///
+    /// * pairs - comma separated list of crypto pairs
+    /// * max_depth - maximum depth of order book to stream
+    pub fn new(pairs: &str, max_depth: usize) -> Self {
+        let pairs_: Vec<String> = HashSet::<String>::from_iter(pairs.split(',').map(String::from))
+            .into_iter()
+            .collect();
         Self {
             context: Context::<InnerMessage>::new("kollector", None),
             gateways: HashMap::new(),
             books: HashMap::new(),
+            pairs: pairs_,
             grpc: None,
             max_depth,
         }
@@ -46,7 +56,7 @@ impl Kollector {
     ///
     /// This method should be called before running the service
     pub fn spawn_grpc(&mut self) {
-        let grpc = OrderbookAggregator::default();
+        let grpc = OrderbookAggregator::new(&self.pairs, self.max_depth);
         self.grpc = Some(grpc.clone());
         serve_grpc(grpc, &self.context);
     }
@@ -74,20 +84,17 @@ impl Kollector {
     /// Main coroutine
     ///
     /// This coroutine runs the main part of the kollector service
-    pub async fn run(&mut self, pairs: &str) {
+    pub async fn run(&mut self) {
         let context = self.context.clone();
-        let assets: Vec<String> = HashSet::<String>::from_iter(pairs.split(',').map(String::from))
-            .into_iter()
-            .collect();
 
         for gateway in self.gateways.values_mut() {
             info!(
                 context.logger,
                 "subscribe to {} {:?}",
                 gateway.name(),
-                assets
+                self.pairs
             );
-            gateway.subscribe(&assets);
+            gateway.subscribe(&self.pairs);
         }
 
         info!(
@@ -103,6 +110,20 @@ impl Kollector {
                 Ok(InnerMessage::Exit) => {
                     warn!(context.logger, "exit main worker");
                     return;
+                }
+                //
+                Ok(InnerMessage::NewBookSnapshot(snapshot)) => {
+                    match self.gateways.get_mut(&snapshot.name) {
+                        Some(gw) => {
+                            gw.request_snapshot();
+                        }
+                        None => {
+                            error!(
+                                context.logger,
+                                "snapshot from an unknown gateway {}", snapshot.name
+                            );
+                        }
+                    }
                 }
                 //
                 Ok(InnerMessage::BookSnapshot(snapshot)) => {

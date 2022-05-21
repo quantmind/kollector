@@ -31,7 +31,7 @@ docker-login:		## login to docker repos - this is for admins only
 image:			## build docker image
 	docker build . -f devops/kollector.dockerfile -t kollector
 
-image-web:			## build docker image
+image-web:		## build docker image
 	docker build . -f devops/web.dockerfile -t kollector-web
 
 image-push:		## push image to repo

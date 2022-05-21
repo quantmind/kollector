@@ -3,7 +3,9 @@ pub mod orderbook {
 }
 use common::{bid_ask_spread, wrap_result, Book, Context, WorkerContext, L2};
 use futures_util::Stream;
-use orderbook::{orderbook_aggregator_server as obs, BookRequest, Level, Summary};
+use orderbook::{
+    orderbook_aggregator_server as obs, BookRequest, Empty, Level, ServiceInfo, Summary,
+};
 use rust_decimal::prelude::*;
 use slog::info;
 use std::collections::HashMap;
@@ -14,7 +16,7 @@ use tonic::{transport::Server, Request, Response, Status};
 
 /// An hashmap mapping an exchange name with the orderbook for a given asset
 pub type AssetBooks = HashMap<String, Book>;
-type BookSummaryResult<T> = Result<Response<T>, Status>;
+type GrpcResult<T> = Result<Response<T>, Status>;
 type GrpcContext = Context<(String, Summary)>;
 
 /// Orderbook Aggregator GRPC server
@@ -26,6 +28,8 @@ type GrpcContext = Context<(String, Summary)>;
 pub struct OrderbookAggregator {
     /// use this to send messages to the Orderbook Aggregator service
     pub context: GrpcContext,
+    pairs: Vec<String>,
+    max_depth: usize,
 }
 
 /// Start serving the GRPC
@@ -67,6 +71,12 @@ pub fn book_summary(asset_books: &AssetBooks) -> Summary {
         best_ask = update_summary_side(&mut summary.asks, &book.asks, exchange, best_ask);
         best_bid = update_summary_side(&mut summary.bids, &book.bids, exchange, best_bid);
     }
+    summary
+        .asks
+        .sort_by(|a, b| a.price.partial_cmp(&b.price).unwrap());
+    summary
+        .bids
+        .sort_by(|a, b| b.price.partial_cmp(&a.price).unwrap());
     summary.spread = bid_ask_spread(best_bid, best_ask)
         .unwrap_or(Decimal::ZERO)
         .to_f64()
@@ -90,11 +100,13 @@ fn update_summary_side(
     book_side.best_of(best_price)
 }
 
-impl Default for OrderbookAggregator {
+impl OrderbookAggregator {
     /// create a new OrderbookAggregator server
-    fn default() -> Self {
+    pub fn new(pairs: &[String], max_depth: usize) -> Self {
         Self {
             context: GrpcContext::new("grpc", None),
+            pairs: pairs.to_owned(),
+            max_depth,
         }
     }
 }
@@ -106,7 +118,7 @@ impl obs::OrderbookAggregator for OrderbookAggregator {
     async fn book_summary(
         &self,
         request: Request<BookRequest>,
-    ) -> BookSummaryResult<Self::BookSummaryStream> {
+    ) -> GrpcResult<Self::BookSummaryStream> {
         // get a new receiver for this connection
         let mut context = self.context.clone();
         let pair = request.get_ref().pair.to_owned();
@@ -136,5 +148,13 @@ impl obs::OrderbookAggregator for OrderbookAggregator {
         Ok(Response::new(
             Box::pin(output_stream) as Self::BookSummaryStream
         ))
+    }
+
+    async fn info(&self, _request: Request<Empty>) -> GrpcResult<ServiceInfo> {
+        let reply = ServiceInfo {
+            max_depth: self.max_depth.to_u64().unwrap(),
+            pairs: self.pairs.to_owned(),
+        };
+        Ok(Response::new(reply))
     }
 }

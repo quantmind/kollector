@@ -25,6 +25,7 @@ lazy_static = "1.4.0"
 rust_decimal = "1.23.1"
 hyper = "0.14.18"
 anyhow = "1.0.57"
+serde = "1.0.137"
 
 [build-dependencies]
 tonic-build = { version = "^0.7.2", features = ["prost", "compression"] }

@@ -1669,6 +1669,7 @@ dependencies = [
  "prometheus",
  "prost",
  "rust_decimal",
+ "serde",
  "slog",
  "tokio",
  "tokio-stream",

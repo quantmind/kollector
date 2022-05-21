@@ -47,9 +47,19 @@ pub struct WsPayload {
     pub value: Value,
 }
 
+/// Gateway command
+///
+/// This struct is used by the websocket consumer to communicate back to the main application
+/// once a new websocket message arrives
+#[derive(Debug, Clone)]
+pub struct NewBookSnapshot {
+    /// gateway name
+    pub name: String,
+}
+
 /// Orderbook snapshot message
 ///
-/// An orderbook snapshot is a representation of the order boo at a given time.
+/// An orderbook snapshot is a representation of the order book at a given time.
 /// It can be used as the starting point of an in-memory order book.
 #[derive(Debug, Clone)]
 pub struct BookSnapshot {
@@ -78,6 +88,8 @@ pub enum InnerMessage {
     WsDisconnected(WsInfo),
     /// websocket payload
     WsPayload(WsPayload),
+    /// request for a new BookSnapshot
+    NewBookSnapshot(NewBookSnapshot),
     /// Orderbook snapshot
     BookSnapshot(BookSnapshot),
 }

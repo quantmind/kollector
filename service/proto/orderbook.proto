@@ -4,10 +4,18 @@ package orderbook;
 
 service OrderbookAggregator {
     rpc BookSummary(BookRequest) returns (stream Summary);
+    rpc Info(Empty) returns (ServiceInfo);
 }
+
+message Empty {}
 
 message BookRequest {
     string pair = 1;
+}
+
+message ServiceInfo {
+    repeated string pairs = 1;
+    uint64 max_depth = 2;
 }
 
 

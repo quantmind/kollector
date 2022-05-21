@@ -23,11 +23,13 @@ services:
 
   kollector:
     image: kollector
-    build: ../devops/kollector.dockerfile
+    build:
+      context: ../
+      dockerfile: ./devops/kollector.dockerfile
     command:
       - kollector
       - "-p"
-      - btcusdt,ethusdt,ethbtc
+      - btcusdt,ethbtc,ltcbtc,xrpbtc
     ports:
       - 8050:8050
     environment:
@@ -35,6 +37,8 @@ services:
 
   kollector-web:
     image: kollector-web
-    build: ../devops/web.dockerfile
+    build:
+      context: ../
+      dockerfile: ./devops/web.dockerfile
     ports:
-      - 3000:3000
+      - 4000:3000

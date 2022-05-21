@@ -15,13 +15,13 @@ async fn http_handler(req: Request<Body>) -> Result<Response<Body>, hyper::Error
     }
 }
 
-pub fn not_found(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+fn not_found(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut not_found = Response::default();
     *not_found.status_mut() = StatusCode::NOT_FOUND;
     Ok(not_found)
 }
 
-pub async fn serve_prometheus_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+async fn serve_prometheus_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let encoder = TextEncoder::new();
 
     let metric_families = prometheus::gather();

@@ -20,6 +20,7 @@ macro_rules! run_gateway {
         $kollector.spawn_gateway(Box::new($Gateway::new(
             &$kollector.context,
             $kollector.max_depth,
+            &$kollector.pairs,
         )))
     };
 }
@@ -30,7 +31,7 @@ async fn main() {
     let app = Args::parse();
 
     // create the service
-    let mut kollector = Kollector::new(app.max_depth);
+    let mut kollector = Kollector::new(&app.pairs, app.max_depth);
     // add Ctrl-c handler
     kollector.handle_ctrlc();
     // spawn the GRPC server
@@ -41,5 +42,5 @@ async fn main() {
     // spawn the HTTP server
     kollector.spawn_http();
     // run the main application
-    kollector.run(&app.pairs).await;
+    kollector.run().await;
 }
