@@ -172,6 +172,27 @@
 <span id="167">167</span>
 <span id="168">168</span>
 <span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::grpc</span>::{<span class="ident">book_summary</span>, <span class="ident">serve_grpc</span>, <span class="ident">AssetBooks</span>, <span class="ident">OrderbookAggregator</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::http::start_http_service</span>;
 <span class="kw">use</span> <span class="ident">common</span>::{<span class="ident">wrap_result</span>, <span class="ident">Book</span>, <span class="ident">Context</span>, <span class="ident">InnerMessage</span>};
@@ -183,6 +204,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Kollector</span> {
     <span class="kw">pub</span> <span class="ident">context</span>: <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">InnerMessage</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">max_depth</span>: <span class="ident">usize</span>,
+    <span class="kw">pub</span> <span class="ident">pairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">gateways</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Gateway</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">books</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">AssetBooks</span><span class="op">&gt;</span>,
     <span class="ident">grpc</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">OrderbookAggregator</span><span class="op">&gt;</span>,
@@ -190,11 +212,20 @@
 
 <span class="kw">impl</span> <span class="ident">Kollector</span> {
     <span class="doccomment">/// Create a new Kollector service</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">max_depth</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Arguments</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// * pairs - comma separated list of crypto pairs</span>
+    <span class="doccomment">/// * max_depth - maximum depth of order book to stream</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">pairs</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">max_depth</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">pairs_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">HashSet</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="ident">::from_iter</span>(<span class="ident">pairs</span>.<span class="ident">split</span>(<span class="string">&#39;,&#39;</span>).<span class="ident">map</span>(<span class="ident">String::from</span>))
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">collect</span>();
         <span class="self">Self</span> {
             <span class="ident">context</span>: <span class="ident">Context</span>::<span class="op">&lt;</span><span class="ident">InnerMessage</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="string">&quot;kollector&quot;</span>, <span class="prelude-val">None</span>),
             <span class="ident">gateways</span>: <span class="ident">HashMap::new</span>(),
             <span class="ident">books</span>: <span class="ident">HashMap::new</span>(),
+            <span class="ident">pairs</span>: <span class="ident">pairs_</span>,
             <span class="ident">grpc</span>: <span class="prelude-val">None</span>,
             <span class="ident">max_depth</span>,
         }
@@ -220,7 +251,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This method should be called before running the service</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn_grpc</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">grpc</span> <span class="op">=</span> <span class="ident">OrderbookAggregator::default</span>();
+        <span class="kw">let</span> <span class="ident">grpc</span> <span class="op">=</span> <span class="ident">OrderbookAggregator::new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">pairs</span>, <span class="self">self</span>.<span class="ident">max_depth</span>);
         <span class="self">self</span>.<span class="ident">grpc</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">grpc</span>.<span class="ident">clone</span>());
         <span class="ident">serve_grpc</span>(<span class="ident">grpc</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">context</span>);
     }
@@ -248,20 +279,17 @@
     <span class="doccomment">/// Main coroutine</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This coroutine runs the main part of the kollector service</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">pairs</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">assets</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">HashSet</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="ident">::from_iter</span>(<span class="ident">pairs</span>.<span class="ident">split</span>(<span class="string">&#39;,&#39;</span>).<span class="ident">map</span>(<span class="ident">String::from</span>))
-            .<span class="ident">into_iter</span>()
-            .<span class="ident">collect</span>();
 
         <span class="kw">for</span> <span class="ident">gateway</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">gateways</span>.<span class="ident">values_mut</span>() {
             <span class="macro">info!</span>(
                 <span class="ident">context</span>.<span class="ident">logger</span>,
                 <span class="string">&quot;subscribe to {} {:?}&quot;</span>,
                 <span class="ident">gateway</span>.<span class="ident">name</span>(),
-                <span class="ident">assets</span>
+                <span class="self">self</span>.<span class="ident">pairs</span>
             );
-            <span class="ident">gateway</span>.<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span><span class="ident">assets</span>);
+            <span class="ident">gateway</span>.<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">pairs</span>);
         }
 
         <span class="macro">info!</span>(
@@ -277,6 +305,20 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">InnerMessage::Exit</span>) =&gt; {
                     <span class="macro">warn!</span>(<span class="ident">context</span>.<span class="ident">logger</span>, <span class="string">&quot;exit main worker&quot;</span>);
                     <span class="kw">return</span>;
+                }
+                <span class="comment">//</span>
+                <span class="prelude-val">Ok</span>(<span class="ident">InnerMessage::NewBookSnapshot</span>(<span class="ident">snapshot</span>)) =&gt; {
+                    <span class="kw">match</span> <span class="self">self</span>.<span class="ident">gateways</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">snapshot</span>.<span class="ident">name</span>) {
+                        <span class="prelude-val">Some</span>(<span class="ident">gw</span>) =&gt; {
+                            <span class="ident">gw</span>.<span class="ident">request_snapshot</span>();
+                        }
+                        <span class="prelude-val">None</span> =&gt; {
+                            <span class="macro">error!</span>(
+                                <span class="ident">context</span>.<span class="ident">logger</span>,
+                                <span class="string">&quot;snapshot from an unknown gateway {}&quot;</span>, <span class="ident">snapshot</span>.<span class="ident">name</span>
+                            );
+                        }
+                    }
                 }
                 <span class="comment">//</span>
                 <span class="prelude-val">Ok</span>(<span class="ident">InnerMessage::BookSnapshot</span>(<span class="ident">snapshot</span>)) =&gt; {

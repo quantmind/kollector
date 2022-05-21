@@ -78,13 +78,13 @@
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">not_found</span>(<span class="ident">_req</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>, <span class="ident">hyper::Error</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">not_found</span>(<span class="ident">_req</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>, <span class="ident">hyper::Error</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">not_found</span> <span class="op">=</span> <span class="ident">Response::default</span>();
     <span class="kw-2">*</span><span class="ident">not_found</span>.<span class="ident">status_mut</span>() <span class="op">=</span> <span class="ident">StatusCode::NOT_FOUND</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">not_found</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">serve_prometheus_req</span>(<span class="ident">_req</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>, <span class="ident">hyper::Error</span><span class="op">&gt;</span> {
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">serve_prometheus_req</span>(<span class="ident">_req</span>: <span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Body</span><span class="op">&gt;</span>, <span class="ident">hyper::Error</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">encoder</span> <span class="op">=</span> <span class="ident">TextEncoder::new</span>();
 
     <span class="kw">let</span> <span class="ident">metric_families</span> <span class="op">=</span> <span class="ident">prometheus::gather</span>();

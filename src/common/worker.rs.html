@@ -150,6 +150,18 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::logging::init_logging</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::orders::Book</span>;
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
@@ -199,9 +211,19 @@
     <span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">Value</span>,
 }
 
+<span class="doccomment">/// Gateway command</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This struct is used by the websocket consumer to communicate back to the main application</span>
+<span class="doccomment">/// once a new websocket message arrives</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NewBookSnapshot</span> {
+    <span class="doccomment">/// gateway name</span>
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+}
+
 <span class="doccomment">/// Orderbook snapshot message</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// An orderbook snapshot is a representation of the order boo at a given time.</span>
+<span class="doccomment">/// An orderbook snapshot is a representation of the order book at a given time.</span>
 <span class="doccomment">/// It can be used as the starting point of an in-memory order book.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BookSnapshot</span> {
@@ -230,6 +252,8 @@
     <span class="ident">WsDisconnected</span>(<span class="ident">WsInfo</span>),
     <span class="doccomment">/// websocket payload</span>
     <span class="ident">WsPayload</span>(<span class="ident">WsPayload</span>),
+    <span class="doccomment">/// request for a new BookSnapshot</span>
+    <span class="ident">NewBookSnapshot</span>(<span class="ident">NewBookSnapshot</span>),
     <span class="doccomment">/// Orderbook snapshot</span>
     <span class="ident">BookSnapshot</span>(<span class="ident">BookSnapshot</span>),
 }
