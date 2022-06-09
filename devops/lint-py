@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+isort . $1
+black . $1
+flake8
+mypy pyservice
