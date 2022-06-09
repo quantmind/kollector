@@ -17,7 +17,7 @@ build:			## build and test
 	cargo test
 
 cloc:			## Count lines of code - requires cloc
-	cloc --exclude-dir=target .
+	cloc --exclude-dir=target,.venv,node_modules,dist,.mypy_cache .
 
 doc-ci:			## build documentation
 	@cargo doc --workspace --no-deps
@@ -41,9 +41,13 @@ web:			## build web interface
 	protoc -I ./service/proto orderbook.proto --js_out=import_style=commonjs:web/proto
 	protoc -I ./service/proto orderbook.proto --grpc-web_out=import_style=commonjs,mode=grpcwebtext:web/proto
 
-lint:			## format code
+lint:			## lint code
+	@./devops/lint-py
 	@cargo fmt
 	@cargo clippy
+
+lint-py:
+	@./devops/lint-py
 
 start:			## start dev services
 	@docker-compose  -f devops/docker-compose.yml up
@@ -53,3 +57,4 @@ test:			## run tests
 
 test-lint:		## lint
 	@cargo fmt --check
+	@./devops/lint-py --check
