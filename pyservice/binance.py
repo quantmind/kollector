@@ -24,6 +24,9 @@ class Binance(WebsocketGateway):
     def on_ws_connection(self) -> None:
         """New connection, subscribe to depth channels"""
         super().on_ws_connection()
+        self.books.clear()
+        self._updates.clear()
+        self._inflight_snapshot.clear()
         self._rpc_write(
             "SUBSCRIBE", [f"{pair}@depth@100ms".lower() for pair in self.pairs]
         )
