@@ -21,6 +21,8 @@ jobs:
         run: make image
       - name: build web image
         run: make image-web
+      - name: build py image
+        run: make image-py
       - name: lint
         run: make test-lint
       - name: tests

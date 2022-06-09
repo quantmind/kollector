@@ -34,6 +34,9 @@ image:			## build docker image
 image-web:		## build docker image
 	docker build . -f devops/web.dockerfile -t kollector-web
 
+image-py:		## build pyservice image
+	docker build . -f devops/pyservice.dockerfile -t kollector-py
+
 image-push:		## push image to repo
 	@echo skip
 
@@ -57,4 +60,3 @@ test:			## run tests
 
 test-lint:		## lint
 	@cargo fmt --check
-	@./devops/lint-py --check
