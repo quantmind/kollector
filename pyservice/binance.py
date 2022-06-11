@@ -71,13 +71,15 @@ class Binance(WebsocketGateway):
             book.asks.update(snapshot.get("asks", ()))
             book.bids.update(snapshot.get("bids", ()))
             self.books[pair] = book
+            self._inflight_snapshot[pair] = False
             for update in self._updates.pop(pair, ()):
                 if update["u"] > sequence:
-                    self._update_book(pair, update)
+                    # stop updating if book inconsistent
+                    if not self._update_book(pair, update):
+                        return
             self.logger.info("snapshot for %s populated - ready for updates", pair)
-            self._inflight_snapshot[pair] = False
 
-    def _update_book(self, pair: str, update: dict) -> None:
+    def _update_book(self, pair: str, update: dict) -> bool:
         book = self.books[pair]
         book.asks.update(update.get("a", ()))
         book.bids.update(update.get("b", ()))
@@ -85,6 +87,8 @@ class Binance(WebsocketGateway):
             if not self._inflight_snapshot[pair]:
                 self.logger.warning("book is inconsistent - request snapshot")
                 self._request_snapshot(pair)
+            return False
+        return True
 
     def _request_snapshot(self, pair: str) -> None:
         """Request a snapshot of the book for a pair"""

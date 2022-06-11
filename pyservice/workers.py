@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from functools import partial
-from typing import Any, Awaitable, Callable, Coroutine, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from aiohttp.web import Application, GracefulExit
 
@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 WorkerType = Callable[[], Awaitable]
-ExecutorType = Callable[[Any], Coroutine]
+# need better typing for this
+ExecutorType = Callable
 
 
 def bail_out() -> None:

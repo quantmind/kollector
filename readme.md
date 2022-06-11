@@ -30,7 +30,7 @@ The command will start:
 * A small python application to stream orderbooks from binance and display as table in the console
 * tested with python 3.10 only
 * Install the app via poetry `poetry install` (you need poetry first)
-* Run the application via `python main.py --console`
+* Run the application via `poetry run python main.py --console` or `make service-py`
 
 
 ![book](https://user-images.githubusercontent.com/144320/169648803-adf7fa98-2701-4695-b8c6-369a66883e1f.gif)

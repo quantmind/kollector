@@ -52,6 +52,12 @@ lint:			## lint code
 lint-py:
 	@./devops/lint-py
 
+service-py:		## start python service with console UI
+	@poetry run python main.py --console
+
+test-py:		## test python service
+	@poetry run pytest -v
+
 start:			## start dev services
 	@docker-compose  -f devops/docker-compose.yml up
 
