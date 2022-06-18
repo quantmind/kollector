@@ -3,5 +3,8 @@ node_modules
 dist
 devops/helm
 .env
+.venv
+__pycache__
+*.pyc
 
 *.log

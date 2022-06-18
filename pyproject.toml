@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "kollector"
+version = "0.1.0"
+description = "Collect orderbook data from crypto exchanges and publish as GRPC"
+authors = ["Luca <luca@quantmind.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp = "^3.8.1"
+click = "^8.1.3"
+sortedcontainers = "^2.4.0"
+rich = "^12.4.4"
+numpy = "^1.22.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+flake8 = "black"
+black = "^22.3.0"
+isort = "^5.10.1"
+mypy = "^0.961"
+pytest-asyncio = "^0.18.3"
+aioresponses = "^0.7.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 88
+exclude = '''
+
+(
+  /(
+      \.eggs
+    | \.git
+    | \.github
+    | \.husky
+    | \.vscode
+    | \.mypy_cache
+    | \.pytest_cache
+    | \.tox
+    | \.venv
+    | \.gitsubmodules
+    | common
+    | devops
+    | dist
+    | gateways
+    | node_modules
+    | service
+    | target
+    | web
+  )/
+)
+'''
