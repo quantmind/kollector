@@ -24,6 +24,7 @@ The command will start:
 * the rust `kollector` service
 * the web server serving the front-end application on http://localhost:4000
 
+![book](https://user-images.githubusercontent.com/144320/169648803-adf7fa98-2701-4695-b8c6-369a66883e1f.gif)
 
 ## Python application
 
@@ -32,5 +33,4 @@ The command will start:
 * Install the app via poetry `poetry install` (you need poetry first)
 * Run the application via `poetry run python main.py --console` or `make service-py`
 
-
-![book](https://user-images.githubusercontent.com/144320/169648803-adf7fa98-2701-4695-b8c6-369a66883e1f.gif)
+![python-book](https://user-images.githubusercontent.com/144320/174490981-31093f56-6101-4492-8bc5-83033d5219c3.gif)
